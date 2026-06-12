@@ -95,10 +95,36 @@ Excluded:
 - Decision: model encryption and authentication as optional transport capabilities
   that a future cloud or protected-file transport may require.
   - Evidence: adding protection later must not fork the sync protocol.
+- Decision: assign each device a monotonic channel sequence and include causal
+  context in every envelope.
+  - Evidence: merge order must not depend on unsynchronized wall clocks.
+- Decision: merge different entities and disjoint concurrent fields automatically;
+  deduplicate equal concurrent values; preserve distinct same-field variants as an
+  explicit conflict.
+  - Evidence: approved option D automates safe cases without losing information.
+- Decision: apply a tombstone only when it causally follows the revision it deletes;
+  preserve concurrent delete-vs-update as a conflict.
+  - Evidence: deletion must not erase an update it never observed.
+- Decision: immediately enforce the most restrictive intersection of concurrent
+  policy changes and require explicit resolution before any relaxation.
+  - Evidence: synchronization cannot temporarily broaden permissions.
+- Decision: merge concurrent pins using the shortest effective expiration, treating
+  unpin as the more restrictive state.
+  - Evidence: pins must not gain retention through concurrency.
+- Decision: keep memory content append-oriented through revisions while allowing
+  portable configuration to merge by field.
+  - Evidence: immutable history reduces destructive content merges without making
+    configuration unusable.
+- Decision: resolve conflicts by creating a new envelope that references every
+  variant and preserves them until acknowledgement and audit retention permit
+  compaction.
+  - Evidence: resolution must converge and remain auditable rather than deleting
+    evidence immediately.
+- Decision: never call an LLM to choose a sync winner.
+  - Evidence: convergence must be deterministic, local, and cost-free.
 
 ## Open Questions
 
-- How are updates, deletes, pins, and policy changes merged?
 - What metadata may the transport observe?
 - How are costs, quotas, retries, and offline backlogs bounded?
 
@@ -122,6 +148,9 @@ Excluded:
 10. Plaintext transport behavior never claims encryption, authentication, or strong
     revocation.
 11. Losing a bundle does not remove unacknowledged local changes.
+12. Concurrent edits either merge safely or preserve every incompatible variant.
+13. Deletes, policies, pins, and conflict resolutions converge without wall-clock
+    winner selection.
 
 ## Test Map
 
@@ -138,6 +167,8 @@ Excluded:
 | AC9 | file/cloud conformance | transports change semantics | both pass the same protocol suite |
 | AC10 | plaintext threat model | UI implies protected data | every surface reports `protection: none` |
 | AC11 | lost or deleted bundle | pending local changes vanish | outbox can create a replacement bundle |
+| AC12 | concurrent field edits | one variant disappears | safe fields merge and conflicting values persist |
+| AC13 | delete/policy/pin races | wall clock selects a winner | causal and restrictive rules converge |
 
 ## Plan
 
