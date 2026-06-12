@@ -43,11 +43,39 @@ Excluded:
   - Evidence: the toolkit must not depend on a specific vendor or CLI.
 - Decision: never synchronize across profiles implicitly.
   - Evidence: personal and work isolation is a security boundary.
+- Decision: select synchronized data by profile, project, and data class.
+  - Evidence: approved option D provides useful continuity without broad implicit
+    replication.
+- Decision: enable portable profile configuration, session summaries, and episodic
+  memory for `personal` by default.
+  - Evidence: these are the approved personal continuity defaults.
+- Decision: keep `work` and `restricted` sync disabled until approved policy enables
+  it.
+  - Evidence: organizational data must not leave a device implicitly.
+- Decision: synchronize explicit pins, deletion tombstones, and portable policy
+  changes, while excluding secrets, raw transcripts, tool payloads, content
+  snapshots, backups, credentials, local bindings, and device-local paths.
+  - Evidence: convergence requires lifecycle operations, but raw and machine-local
+    data must remain excluded.
+- Decision: apply the most restrictive intersection of sender and receiver policies.
+  - Evidence: sync cannot expand what either endpoint is allowed to store.
+- Decision: implement a versioned `.agentic-sync` file bundle as the first transport.
+  - Evidence: the requested initial UX is to carry one file between machines and run
+    one sync command.
+- Decision: make `agentic-workflow sync <file>` preview and apply inbound changes,
+  append pending local changes, deduplicate stable IDs, record acknowledgements, and
+  atomically replace the bundle.
+  - Evidence: one bidirectional command minimizes manual state while remaining
+    recoverable.
+- Decision: keep bundles transport-only and idempotent, never canonical state,
+  database snapshots, or backups.
+  - Evidence: replay and divergent file copies must converge without transferring
+    SQLite.
+- Decision: require future cloud transports to carry the same protocol envelopes.
+  - Evidence: cloud adoption must not fork merge, policy, or memory semantics.
 
 ## Open Questions
 
-- Which sync topology and first transport should be implemented?
-- Which profiles and data classes may sync by default?
 - How are devices enrolled, authenticated, revoked, and recovered?
 - What encryption and key-management model is required?
 - How are updates, deletes, pins, and policy changes merged?
@@ -69,6 +97,8 @@ Excluded:
 5. Offline edits converge deterministically or surface an actionable conflict.
 6. Transport replacement does not alter memory-domain APIs.
 7. Work and restricted sync remain disabled unless policy explicitly enables them.
+8. Reapplying or combining file bundles does not duplicate changes.
+9. File and future cloud transports use the same versioned envelopes.
 
 ## Test Map
 
@@ -81,6 +111,8 @@ Excluded:
 | AC5 | concurrent offline edits | nondeterministic winner | deterministic merge or conflict |
 | AC6 | alternate transport | domain changes | same protocol contract passes |
 | AC7 | work preset | sync starts implicitly | explicit approved policy is required |
+| AC8 | bundle replay and branching | duplicate records appear | stable IDs deduplicate and converge |
+| AC9 | file/cloud conformance | transports change semantics | both pass the same protocol suite |
 
 ## Plan
 
