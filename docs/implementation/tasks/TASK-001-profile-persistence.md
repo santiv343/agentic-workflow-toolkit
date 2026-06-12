@@ -94,11 +94,25 @@ Excluded:
 - Decision: never fall back to the last active profile or infer identity from path,
   account, CLI, model, or repository name.
   - Evidence: those signals are not reliable security boundaries.
+- Decision: store profile routing in one machine-local global `registry.db`.
+  - Evidence: routing must be resolved before a private profile database can be
+    selected, without scanning every profile or writing into the repository.
+- Decision: limit the registry to opaque profile identity, hashed fingerprint
+  identity, exact bindings, repository mode, schema state, timestamps, and binding
+  provenance.
+  - Evidence: a global routing index must not become shared memory or expose project
+    content across profile boundaries.
+- Decision: derive private database locations from opaque profile IDs instead of
+  storing externally controlled paths.
+  - Evidence: deterministic locations reduce path traversal and accidental
+    cross-profile access.
+- Decision: fail closed for persistence when the registry is missing, corrupt, or
+  migration-incompatible.
+  - Evidence: scanning profile databases or guessing a binding would weaken the
+    selected isolation policy.
 
 ## Open Questions
 
-- Where should profile metadata and project bindings live before a profile database
-  can be selected?
 - What exact data classes may each profile persist?
 - What are the default retention, purge, and backup policies?
 - Which fingerprint changes require rebind versus migration?
@@ -127,6 +141,8 @@ Excluded:
 5. Work and personal profile databases cannot be searched across boundaries.
 6. Zero-footprint mode leaves `git status` unchanged.
 7. SQLite failures degrade without weakening critical project gates.
+8. The global registry contains routing metadata only and never stores project or
+   conversation content.
 
 ## Test Map
 
@@ -139,6 +155,7 @@ Excluded:
 | AC5 | cross-profile lookup | records leak across profiles | lookup remains profile-scoped |
 | AC6 | zero-footprint integration | repo contains changes | `git status` remains unchanged |
 | AC7 | unavailable or corrupt database | gates weaken or crash unclearly | degraded status is explicit and gates remain |
+| AC8 | registry schema and write API | content fields can be stored | only allowlisted routing metadata is accepted |
 
 ## Plan
 
