@@ -190,10 +190,28 @@ Excluded:
   change to existing data.
   - Evidence: preset changes must not silently delete, reclassify, or grandfather
     records that violate the new policy.
+- Decision: keep three automatic `registry.db` snapshots after migrations or binding
+  changes.
+  - Evidence: registry recovery is small and critical to profile routing.
+- Decision: enable consistent local backups for `personal` when data changed, keeping
+  seven daily and four weekly snapshots.
+  - Evidence: approved backup option D balances recovery with bounded retention.
+- Decision: disable backups for `work` and `restricted` unless an approved policy
+  enables them; `disabled` never backs up.
+  - Evidence: work environments may prohibit duplicating persisted data.
+- Decision: never select network or cloud folders automatically and never copy an
+  active SQLite database ad hoc.
+  - Evidence: backup must not become unsafe implicit sync.
+- Decision: restore into a new candidate database, verify checksum and integrity,
+  apply compatible migrations, preview the result, then atomically swap with a
+  temporary rollback copy.
+  - Evidence: restoration must not destroy the last known-good local state.
+- Decision: treat backup retention independently from record TTL and include
+  toolkit-managed backups in security purge.
+  - Evidence: snapshots can retain records after their live copies expire.
 
 ## Open Questions
 
-- What backup policy should each preset use?
 - Which fingerprint changes require rebind versus migration?
 - How should explicit overrides interact with commands that mutate persistent state?
 
@@ -232,6 +250,8 @@ Excluded:
 13. Built-in presets enforce the approved quotas, TTLs, and pin maxima using stable
     logical-byte accounting.
 14. Preset changes cannot silently alter existing records.
+15. Backups and restores follow profile policy, consistency checks, preview, and
+    rollback without writing into repositories.
 
 ## Test Map
 
@@ -251,6 +271,7 @@ Excluded:
 | AC12 | pin pressure and overrides | pins bypass policy or disappear silently | writes stop and status reports the conflict |
 | AC13 | quota and TTL boundaries | physical file size changes admission | logical bytes and exact time boundaries decide |
 | AC14 | preset transition | conflicting records change silently | preview blocks until an explicit resolution exists |
+| AC15 | backup and restore | active DB is copied or overwritten first | consistent candidate validates before atomic swap |
 
 ## Plan
 
