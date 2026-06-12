@@ -7,9 +7,9 @@ ownership, dependencies, or reviewed commits change.
 
 | ID | Objective | Depends on | State | Owner | Branch | Worktree | Write-set | Base commit | Head commit |
 |---|---|---|---|---|---|---|---|---|---|
-| TASK-001 | Add profile-aware local persistence and safe project binding | none | planned | unassigned | - | - | profile, storage, CLI, tests, docs | `a853a7a` | - |
-| TASK-002 | Add secure multi-machine profile synchronization | TASK-001 | planned | unassigned | - | - | sync protocol, transports, crypto, tests, docs | `313fcd6` | - |
-| TASK-003 | Add normalized event core and conformance evidence | quality baseline | planned | unassigned | - | - | core protocol, schemas, conformance, evidence | - | - |
+| TASK-001 | Add profile-aware local persistence and safe project binding | TASK-009 | planned | unassigned | - | - | profile, storage, CLI, tests, docs | `a853a7a` | - |
+| TASK-002 | Add portable multi-machine profile synchronization | TASK-001 | planned | unassigned | - | - | sync protocol, transports, merge, tests, docs | `313fcd6` | - |
+| TASK-003 | Add normalized event core and conformance evidence | TASK-009 | planned | unassigned | - | - | core protocol, schemas, conformance, evidence | - | - |
 | TASK-004 | Add portable skill registry and resolver | TASK-003 | planned | unassigned | - | - | skill discovery, precedence, conflicts, tests | - | - |
 | TASK-005 | Add universal MCP interface | TASK-001, TASK-003, TASK-004 | planned | unassigned | - | - | MCP server, tools, tests, docs | - | - |
 | TASK-006 | Add native OpenCode adapter | TASK-003, TASK-004, TASK-005 | planned | unassigned | - | - | OpenCode binding, hooks, conformance | - | - |

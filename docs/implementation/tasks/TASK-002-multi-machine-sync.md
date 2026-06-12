@@ -1,4 +1,4 @@
-# Task Packet: TASK-002 - Secure Multi-Machine Sync
+# Task Packet: TASK-002 - Portable Multi-Machine Sync
 
 ## Metadata
 
@@ -11,7 +11,7 @@
 
 ## Mission
 
-Synchronize authorized profile data between machines without copying SQLite files,
+Synchronize policy-permitted profile data between machines without copying SQLite files,
 mixing profiles, or requiring the toolkit core to depend on one remote provider.
 
 ## Scope
@@ -20,9 +20,9 @@ Included:
 
 - versioned sync protocol over logical records and tombstones;
 - profile and device identity;
-- end-to-end protection and transport abstraction;
+- explicit plaintext threat model and transport abstraction;
 - offline operation and deterministic conflict handling;
-- explicit enrollment, revocation, status, pause, resume, and reset;
+- explicit join, coordination cleanup, status, pause, resume, and reset;
 - conformance tests for each transport.
 
 Excluded:
@@ -242,14 +242,15 @@ Excluded:
 
 - Update: `README.md`, `CHANGELOG.md`, command help, security model, and transport
   conformance documentation.
-- Reason: sync introduces network, cryptographic, recovery, and conflict semantics.
+- Reason: sync introduces transport, threat-model, recovery, and conflict semantics.
 
 ## Acceptance Criteria
 
 1. Sync never copies or opens a remote SQLite database.
-2. A device cannot sync until explicitly enrolled into one profile.
+2. A device cannot sync until explicitly joined to one local profile.
 3. Local policy filters every outgoing and incoming record.
-4. Revocation prevents future synchronization without deleting unrelated profiles.
+4. Forgetting a device stops it from blocking compaction and forces a rebase if it
+   later returns, without claiming strong revocation.
 5. Offline edits converge deterministically or surface an actionable conflict.
 6. Transport replacement does not alter memory-domain APIs.
 7. Work and restricted sync remain disabled unless policy explicitly enables them.
@@ -273,9 +274,9 @@ Excluded:
 | Criterion | Test | Expected red | Expected green |
 |---|---|---|---|
 | AC1 | transport integration | DB file is transferred | only protocol envelopes move |
-| AC2 | unenrolled device | data is accepted | enrollment is required |
+| AC2 | unjoined device | data is accepted | explicit local join is required |
 | AC3 | policy mismatch | denied class crosses boundary | record is filtered or rejected |
-| AC4 | revoked device | sync continues | credentials and cursor are rejected |
+| AC4 | forgotten device | it blocks compaction or resumes stale history | it no longer blocks and must rebase |
 | AC5 | concurrent offline edits | nondeterministic winner | deterministic merge or conflict |
 | AC6 | alternate transport | domain changes | same protocol contract passes |
 | AC7 | work preset | sync starts implicitly | explicit approved policy is required |
@@ -294,10 +295,10 @@ Excluded:
 
 1. Resolve every open question and move this packet to `ready`.
 2. Specify protocol and threat model.
-3. Add failing protocol, policy, crypto, and convergence tests.
+3. Add failing protocol, policy, failure-injection, and convergence tests.
 4. Implement a transport-neutral sync engine.
 5. Implement the selected first transport.
-6. Add enrollment, status, recovery, and revocation CLI flows.
+6. Add join, status, recovery, and coordination-cleanup CLI flows.
 7. Run conformance and failure-injection tests.
 
 ## Stop Conditions
