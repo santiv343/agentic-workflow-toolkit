@@ -2,11 +2,11 @@
 
 ## Metadata
 
-- Status: ready
+- Status: active
 - Base branch: `main`
-- Base commit: set at dispatch
-- Worker branch:
-- Worktree:
+- Base commit: 4f5e38ed7e7386d64aa226641ec5936e2dd85e31
+- Worker branch: TASK-011-mvp-release-hardening
+- Worktree: C:/Users/santi/AppData/Local/Temp/opencode/worktrees/TASK-011-mvp-release-hardening
 - Dependencies: none
 
 ## Mission
