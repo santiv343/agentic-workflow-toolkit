@@ -168,10 +168,31 @@ Excluded:
 - Decision: run bounded maintenance on profile open, near-quota writes, and an
   explicit maintenance command without requiring an LLM or daemon.
   - Evidence: retention behavior should be portable, deterministic, and observable.
+- Decision: use conservative built-in quotas of 128 MiB for `personal`, 32 MiB for
+  `work`, 4 MiB for `restricted`, and 0 MiB for `disabled`.
+  - Evidence: approved option B provides bounded useful storage without making local
+    memory operationally heavy.
+- Decision: use built-in TTLs of 30/180/365 days for personal metadata, summaries,
+  and episodic memory; 14/30 days for work metadata and summaries; and 7 days for
+  restricted metadata.
+  - Evidence: these are the approved conservative class defaults.
+- Decision: cap pins at 365 days for `personal`, 90 days for `work`, and disable pins
+  for `restricted` and `disabled`.
+  - Evidence: pins remain bounded in every built-in preset.
+- Decision: require opt-in classes to declare TTL, per-record size, and quota budget
+  explicitly rather than inheriting a hidden default.
+  - Evidence: enabling a new data class must expose its retention cost.
+- Decision: define MiB as 1,048,576 bytes and enforce quota using logical persisted
+  bytes, while reporting SQLite file, WAL, temporary, and backup sizes separately.
+  - Evidence: physical SQLite size includes implementation overhead and free pages,
+    so it is not a stable admission-control metric.
+- Decision: require a preview and explicit conflict decision before applying a preset
+  change to existing data.
+  - Evidence: preset changes must not silently delete, reclassify, or grandfather
+    records that violate the new policy.
 
 ## Open Questions
 
-- What numeric TTLs and quotas should each preset use?
 - What backup policy should each preset use?
 - Which fingerprint changes require rebind versus migration?
 - How should explicit overrides interact with commands that mutate persistent state?
@@ -208,6 +229,9 @@ Excluded:
 11. Retention applies the documented hard-limit, expiry, and LRU order without using
     an LLM.
 12. Pins are auditable, bounded, and never weaken managed or security limits.
+13. Built-in presets enforce the approved quotas, TTLs, and pin maxima using stable
+    logical-byte accounting.
+14. Preset changes cannot silently alter existing records.
 
 ## Test Map
 
@@ -225,6 +249,8 @@ Excluded:
 | AC10 | preset conformance | raw content is enabled implicitly | effective policy matches the documented allowlist |
 | AC11 | retention maintenance | records survive or purge nondeterministically | hard limits, TTL, and LRU run in fixed order |
 | AC12 | pin pressure and overrides | pins bypass policy or disappear silently | writes stop and status reports the conflict |
+| AC13 | quota and TTL boundaries | physical file size changes admission | logical bytes and exact time boundaries decide |
+| AC14 | preset transition | conflicting records change silently | preview blocks until an explicit resolution exists |
 
 ## Plan
 
