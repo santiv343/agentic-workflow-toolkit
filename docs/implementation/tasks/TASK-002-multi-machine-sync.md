@@ -122,11 +122,40 @@ Excluded:
     evidence immediately.
 - Decision: never call an LLM to choose a sync winner.
   - Evidence: convergence must be deterministic, local, and cost-free.
+- Decision: cap the active file bundle at 64 MiB and each serialized envelope at
+  256 KiB.
+  - Evidence: approved option D bounds portable transfer and parsing costs.
+- Decision: reject oversized envelopes before outbox admission rather than silently
+  fragmenting or promoting them into content snapshots.
+  - Evidence: the data-class and per-record limits must remain enforceable.
+- Decision: compact only acknowledged replaceable events while retaining pending
+  events, open conflicts, required tombstones, and audit-retained resolutions.
+  - Evidence: size reduction must not break convergence or lose unresolved data.
+- Decision: create a policy-filtered logical snapshot and causal frontier when an
+  active device can no longer replay retained history.
+  - Evidence: an offline device needs a bounded rebase path without receiving a
+    database backup.
+- Decision: merge a recovery snapshot into the local profile rather than replacing
+  the local database.
+  - Evidence: non-synchronized local data and local policy remain authoritative.
+- Decision: keep local outbox changes until acknowledgement or explicit previewed
+  discard, using stable references where payload reconstruction is deterministic.
+  - Evidence: transport loss and compaction must not lose local work or duplicate
+    storage unnecessarily.
+- Decision: allow a forgotten device to stop blocking compaction and require it to
+  rebase from the current logical snapshot if it returns.
+  - Evidence: abandoned devices cannot retain history forever.
+- Decision: perform at most three bounded automatic retries per command and use
+  temporary validation plus atomic replacement.
+  - Evidence: failures should remain recoverable without infinite loops or partial
+    bundles.
+- Decision: never allow an implicitly unlimited bundle or envelope policy.
+  - Evidence: every transport must expose bounded storage, retry, and future cost
+    behavior.
 
 ## Open Questions
 
 - What metadata may the transport observe?
-- How are costs, quotas, retries, and offline backlogs bounded?
 
 ## Documentation Impact
 
@@ -151,6 +180,9 @@ Excluded:
 12. Concurrent edits either merge safely or preserve every incompatible variant.
 13. Deletes, policies, pins, and conflict resolutions converge without wall-clock
     winner selection.
+14. Bundle and envelope limits trigger lossless compaction or an actionable failure.
+15. Devices older than the causal frontier can rebase from a filtered logical
+    snapshot without replacing local-only data.
 
 ## Test Map
 
@@ -169,6 +201,8 @@ Excluded:
 | AC11 | lost or deleted bundle | pending local changes vanish | outbox can create a replacement bundle |
 | AC12 | concurrent field edits | one variant disappears | safe fields merge and conflicting values persist |
 | AC13 | delete/policy/pin races | wall clock selects a winner | causal and restrictive rules converge |
+| AC14 | bundle pressure and failed compaction | pending events or original file disappear | original state survives or compacted bundle validates |
+| AC15 | long-offline device | full DB copy or permanent failure | logical snapshot rebase converges under policy |
 
 ## Plan
 
