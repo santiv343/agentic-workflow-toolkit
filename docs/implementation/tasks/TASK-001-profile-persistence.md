@@ -209,10 +209,37 @@ Excluded:
 - Decision: treat backup retention independently from record TTL and include
   toolkit-managed backups in security purge.
   - Evidence: snapshots can retain records after their live copies expire.
+- Decision: assign each project an opaque stable `project_id` and treat fingerprints
+  as versioned recognition evidence, never primary identity.
+  - Evidence: paths, remotes, and Git metadata can change without meaning the project
+    changed.
+- Decision: group worktrees by Git common-dir while keeping session, task, branch,
+  and ownership identities separate.
+  - Evidence: worktrees share repository identity but not execution state.
+- Decision: update path evidence automatically only when stronger existing evidence
+  preserves the binding.
+  - Evidence: moving a known clone should not lose memory, but path similarity cannot
+    merge projects.
+- Decision: require confirmation when associating a new clone by remote, adding a
+  first remote, changing remotes, observing history replacement, or losing strong
+  evidence.
+  - Evidence: these events may represent rename, transfer, fork, recreation, or an
+    unrelated repository.
+- Decision: offer keep, new, or derived identity for semantic changes.
+  - Evidence: users need to preserve continuity, isolate a new project, or record
+    lineage without automatic memory sharing.
+- Decision: never share memory automatically across derived projects.
+  - Evidence: lineage is provenance, not an authorization boundary.
+- Decision: keep fingerprint history with source, confidence, confirmation state,
+  and timestamps, storing remotes and local evidence only as normalized hashes.
+  - Evidence: diagnostics and old-clone recognition should not expose paths or remote
+    URLs in the global registry.
+- Decision: keep zero-footprint identity, confirmations, and lineage entirely outside
+  the repository; managed mode may add a non-private versioned marker.
+  - Evidence: restricted repositories cannot accept toolkit artifacts.
 
 ## Open Questions
 
-- Which fingerprint changes require rebind versus migration?
 - How should explicit overrides interact with commands that mutate persistent state?
 
 ## Assumptions
@@ -252,6 +279,9 @@ Excluded:
 14. Preset changes cannot silently alter existing records.
 15. Backups and restores follow profile policy, consistency checks, preview, and
     rollback without writing into repositories.
+16. Moves and worktrees preserve identity while clones, remote changes, forks, and
+    history replacement require the documented confirmation flow.
+17. Derived identities record lineage without implicit memory sharing.
 
 ## Test Map
 
@@ -272,6 +302,8 @@ Excluded:
 | AC13 | quota and TTL boundaries | physical file size changes admission | logical bytes and exact time boundaries decide |
 | AC14 | preset transition | conflicting records change silently | preview blocks until an explicit resolution exists |
 | AC15 | backup and restore | active DB is copied or overwritten first | consistent candidate validates before atomic swap |
+| AC16 | project identity changes | path or remote silently reassigns memory | evidence rules preserve or block as documented |
+| AC17 | derived project | source memory becomes searchable | lineage exists but storage and search stay isolated |
 
 ## Plan
 
