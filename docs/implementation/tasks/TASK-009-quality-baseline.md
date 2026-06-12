@@ -22,6 +22,7 @@ Included:
 - ESM build output and declaration files;
 - ESLint flat configuration and deterministic formatting;
 - public API and boundary type contracts;
+- JSON Schema, generated transport types, and standalone runtime validation;
 - typed result and failure contracts;
 - explicit typed dependency composition and resource lifecycle;
 - modular-monolith ports-and-adapters structure and architecture tests;
@@ -38,8 +39,9 @@ Excluded:
 
 ## Ownership
 
-- Write-set: `src/`, `bin/`, `test/`, TypeScript, ESLint, format, and build
-  configuration, `package.json`, lockfile, `README.md`, `CHANGELOG.md`
+- Write-set: `src/`, `bin/`, `test/`, `schema/`, generation scripts and output,
+  TypeScript, ESLint, format, and build configuration, `package.json`, lockfile,
+  `README.md`, `CHANGELOG.md`
 - Read-set: schemas, templates, package API, current tests, downstream Task Packets
 - Forbidden-set: Knowledge Hub methodology, consumer repositories, future feature
   implementation
@@ -222,6 +224,59 @@ Excluded:
   lifecycle order, idempotent close, and concurrent context isolation.
   - Evidence: type correctness alone does not prove that the object graph can start,
     stop, or serve concurrent operations safely.
+- Decision: use JSON Schema Draft 2020-12 as the canonical source for every serialized
+  external contract and Ajv's Draft 2020-12 implementation for runtime validation.
+  - Evidence: approved option C preserves language- and host-neutral contracts while
+    the existing workflow schema already uses this draft.
+- Decision: generate transport-only TypeScript types and standalone ESM validators
+  from package-owned schemas during build.
+  - Evidence: generation prevents hand-maintained schema/type drift, and standalone
+    validation avoids repeated runtime compilation.
+- Decision: use Ajv 8 programmatically through its Draft 2020-12 and standalone-code
+  APIs, plus `json-schema-to-typescript` as a build-only type generator.
+  - Evidence: this directly implements the selected contract without adding
+    `ajv-cli`, a runtime TypeScript schema DSL, or another validation framework.
+- Decision: exact-pin validator and generator versions when TASK-009 is dispatched;
+  do not register `ajv-formats` or any format implementation by default.
+  - Evidence: generated output must be reproducible, and Ajv requires separate format
+    implementations whose untrusted-input safety must be assessed individually.
+- Decision: keep domain/application types and semantic invariants hand-written and
+  separate from generated transport types.
+  - Evidence: JSON Schema can validate serialized shape but cannot own authorization,
+    causal validity, transitions, cross-record consistency, or policy decisions.
+- Decision: run Ajv with strict schema validation and non-mutating behavior; disable
+  coercion, defaults, property removal, verbose data output, and `allErrors` for
+  production validation.
+  - Evidence: portable validation must not transform input, and Ajv documents
+    `allErrors` and untrusted data/schema complexity as security risks.
+- Decision: allow only local package-owned `$ref` resolution and standard Draft
+  2020-12 keywords in portable contracts.
+  - Evidence: network refs, custom keywords, and `$data` make builds non-reproducible
+    or bind the contract to one validator.
+- Decision: require closed and bounded schemas, including explicit rules for
+  intentional maps, strings, arrays, and objects.
+  - Evidence: unknown properties and unbounded structures increase ambiguity,
+    storage cost, validation cost, and denial-of-service risk.
+- Decision: enforce raw transport limits before parsing where possible and return
+  bounded sanitized structural diagnostics without rejected values.
+  - Evidence: schema validation cannot protect a process that already accepted an
+    oversized payload, and raw validator messages can leak input.
+- Decision: generate and commit deterministic transport types, validators, and a
+  registry manifest; `verify` regenerates to temporary output and byte-compares.
+  - Evidence: committed generated artifacts support inspection and package use while
+    drift checks prevent manual edits or stale output.
+- Decision: version every payload explicitly, fail closed on unknown versions, use
+  deterministic migrations for local data, and negotiate retained validators for
+  wire protocols.
+  - Evidence: object-shape guessing and silently replacing schemas would corrupt old
+    state or split adapters across incompatible protocol meanings.
+- Decision: classify every schema change as compatible reader change, breaking
+  version, or security tightening and test all supported golden fixtures.
+  - Evidence: closed schemas make compatibility directional; release intent and
+    migration behavior must be explicit.
+- Decision: do not compile user-provided or remote schemas in the baseline.
+  - Evidence: Ajv treats schemas as trusted application code and warns that untrusted
+    schemas can cause excessive compilation or validation cost.
 
 ## Open Questions
 
@@ -282,6 +337,16 @@ Excluded:
     cancellation, correlation, command, request, or session context.
 17. Unit/application tests use complete typed fakes, while integration overrides are
     limited to the declared `TestOverrides` contract.
+18. Every serialized toolkit contract has a unique versioned Draft 2020-12 schema,
+    generated transport type, standalone validator, and registry entry.
+19. Validation does not mutate input, resolve network references, compile untrusted
+    schemas, expose rejected values, or permit unbounded contract structures.
+20. Generated types and validators are deterministic, contain no `any`, and fail
+    verification when they drift from schemas.
+21. Unknown versions fail closed; all retained versions pass golden fixtures,
+    migrations or negotiation tests, and serialization round trips.
+22. Semantic invariants remain enforced in domain/application even when structural
+    validation already succeeded.
 
 ## Test Map
 
@@ -304,6 +369,11 @@ Excluded:
 | AC15 | lifecycle fault injection | partial startup leaks or close stops early | rollback and reverse idempotent close |
 | AC16 | concurrent context test | context bleeds across operations | each invocation remains isolated |
 | AC17 | test-composition fixtures | arbitrary partial/module patch works | only complete fakes and approved overrides compile |
+| AC18 | schema registry test | ID, type, validator, or version missing | complete unique registry |
+| AC19 | hostile boundary fixtures | payload mutates, fetches refs, or exhausts bounds | safe bounded rejection |
+| AC20 | regeneration drift test | generated output is edited or stale | byte-identical deterministic output |
+| AC21 | compatibility matrix | old/unknown version is guessed or corrupted | migration, negotiation, or closed failure |
+| AC22 | semantic-invalid fixture | structurally valid policy/state is accepted | domain rejects the invalid meaning |
 
 ## Plan
 
@@ -312,13 +382,16 @@ Excluded:
 3. Add the architecture dependency matrix and failing forbidden-edge fixtures.
 4. Add failing result, exhaustiveness, classification, and safe-projection fixtures.
 5. Add failing composition, context-isolation, startup, and shutdown fixtures.
-6. Migrate pure domain contracts and application use cases by capability.
-7. Move I/O behind application-owned ports and implement infrastructure adapters.
-8. Add capability factories, top-level composition, and explicit lifecycle handling.
-9. Migrate CLI entry points into inbound interfaces.
-10. Migrate tests and split oversized mixed-responsibility modules.
-11. Update package exports, bin, build, docs, and changelog.
-12. Run complete verification and inspect the packed artifact.
+6. Add failing schema registry, drift, hostile-input, and compatibility fixtures.
+7. Add Ajv, pinned type generation, standalone validator generation, and registry
+   generation.
+8. Migrate pure domain contracts and application use cases by capability.
+9. Move I/O behind application-owned ports and implement infrastructure adapters.
+10. Add capability factories, top-level composition, and explicit lifecycle handling.
+11. Migrate CLI entry points into inbound interfaces.
+12. Migrate tests and split oversized mixed-responsibility modules.
+13. Update package exports, bin, build, docs, and changelog.
+14. Run complete verification and inspect the packed artifact.
 
 ## Stop Conditions
 
@@ -327,8 +400,9 @@ bundler/runtime loader, weakens strict flags, uses assertions to silence boundar
 adds empty architectural scaffolding, introduces generic speculative ports, allows
 adapter-to-adapter wiring, throws a declared failure, exposes a raw cause through a
 public interface, introduces hidden dependency lookup or ambient request state, leaks
-a partially constructed runtime, or mixes future feature implementation into the
-baseline.
+a partially constructed runtime, duplicates a transport type by hand, enables
+mutating validation or remote schema resolution, guesses a payload version, or mixes
+future feature implementation into the baseline.
 
 ## Definition of Done
 

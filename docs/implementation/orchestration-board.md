@@ -15,7 +15,7 @@ ownership, dependencies, or reviewed commits change.
 | TASK-006 | Add native OpenCode adapter | TASK-003, TASK-004, TASK-005 | planned | unassigned | - | - | OpenCode binding, hooks, conformance | - | - |
 | TASK-007 | Add native Codex adapter | TASK-003, TASK-004, TASK-005 | planned | unassigned | - | - | Codex plugin, hooks, conformance | - | - |
 | TASK-008 | Add native Claude Code adapter | TASK-003, TASK-004, TASK-005 | planned | unassigned | - | - | Claude plugin, hooks, conformance | - | - |
-| TASK-009 | Harden toolkit quality baseline | none | planned | unassigned | - | - | TypeScript, lint, build, architecture, package | set at dispatch | - |
+| TASK-009 | Harden toolkit quality baseline | none | planned | unassigned | - | - | TypeScript, schemas, lint, build, architecture, package | set at dispatch | - |
 
 ## Ready
 

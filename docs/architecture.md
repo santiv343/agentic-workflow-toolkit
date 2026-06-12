@@ -219,6 +219,107 @@ infrastructure adapter validates and converts them before application or domain 
 
 Domain and application code never receive an unvalidated external object.
 
+## External Contract Schemas
+
+JSON Schema Draft 2020-12 is the canonical source for serialized contract shape.
+This includes repository configuration, persisted records, sync envelopes, MCP
+payloads, normalized host events, and public machine-readable output.
+
+The ownership chain is:
+
+```text
+versioned JSON Schema
+  -> generated TypeScript transport type
+  -> generated standalone Ajv validator
+  -> adapter mapping
+  -> domain/application value with semantic invariants
+```
+
+Schema constraints describe serialization and structural validity: required fields,
+primitive types, discriminants, closed objects, bounded collections, and syntactic
+limits. Domain/application code owns authorization, policy, causal validity,
+cross-record consistency, state transitions, quota decisions, and other semantic
+invariants. A rule lives in both places only when the schema needs an early structural
+bound and the domain still must defend its invariant.
+
+### Schema Rules
+
+- Every schema declares Draft 2020-12 with `$schema`, a globally unique stable `$id`,
+  a title, and an explicit payload version or versioned envelope.
+- Object schemas are closed with `additionalProperties: false` or
+  `unevaluatedProperties: false`. Intentional maps define a value schema,
+  `propertyNames`, and `maxProperties`.
+- Strings, arrays, and objects have explicit size limits where they cross a trust or
+  persistence boundary.
+- Standard `$ref` values resolve only through the package-owned local schema registry.
+  Runtime network resolution is prohibited.
+- Ajv-specific `$data`, mutating custom keywords, and other implementation extensions
+  are prohibited in portable contracts.
+- `format` is an annotation unless a specifically reviewed safe implementation is
+  registered. Security-sensitive syntax uses bounded standard keywords or explicit
+  adapter parsing.
+- Recursive schemas, complex regular expressions, `uniqueItems` on large structures,
+  and other high-cost constructs require an explicit performance and security test.
+- Schemas are trusted package code. Compiling user-provided or remote schemas is not
+  supported by the baseline.
+
+Raw byte or record limits are enforced before parsing when the transport exposes
+them. Parsing rejects duplicate keys and unsafe YAML features where applicable.
+Structural validation never mutates input: coercion, default insertion, and automatic
+removal of properties are disabled.
+
+### Ajv Runtime
+
+Package-owned schemas are compiled during build with the Ajv Draft 2020-12 entry
+point and strict schema settings. Generated standalone ESM validators are published
+with the package, so normal execution does not compile schemas repeatedly.
+
+The build uses Ajv 8 through its programmatic API, not `ajv-cli`. No format plugin is
+registered by default; a schema that needs a format must add and security-review only
+that implementation.
+
+Production validation stops at the first structural error. It does not use
+`allErrors`, verbose data output, or raw Ajv messages as a public contract. Adapters
+map bounded `instancePath`, `schemaPath`, keyword, and safe params into the toolkit's
+typed validation failure without including rejected values.
+
+### Generated Types
+
+Transport types are deterministically generated with the
+`json-schema-to-typescript` build package. Ajv and the generator are exact-pinned when
+the task is dispatched and recorded in the lockfile. Generated files:
+
+- are marked generated and never edited manually;
+- contain no `any`;
+- are used only at adapter and serialization boundaries;
+- are regenerated into a temporary location during `verify` and byte-compared with
+  committed output;
+- do not replace hand-written branded identifiers, value objects, policies, or
+  domain state.
+
+The same build step generates a schema registry manifest containing each `$id`,
+payload version, digest, validator export, and generated type export. Duplicate IDs,
+unresolved references, nondeterministic output, or schema/type/validator drift fail
+verification.
+
+### Evolution
+
+Unknown payload versions fail closed; the toolkit never guesses a schema from object
+shape. Local persisted/configuration formats use explicit deterministic migration
+chains to the current version. Wire contracts retain version-specific validators and
+negotiate supported versions before exchange.
+
+Every schema change is classified:
+
+- compatible reader change: the current reader still accepts all supported old
+  fixtures and preserves their meaning;
+- breaking change: new schema ID/version plus migration or protocol negotiation;
+- security tightening: explicit migration/rejection policy and release note.
+
+Golden fixtures from every supported version run against validators, type generation,
+migrations, and serialization round trips. A schema cannot be removed while a
+supported migration, persisted record, or negotiated peer still depends on it.
+
 ## Failure Contract
 
 Expected failures are values, not exceptions:
@@ -295,6 +396,8 @@ converts an unexpected defect into a normal domain failure.
   preservation of unexpected causes without leaking them.
 - Composition tests prove complete explicit wiring, lifecycle order, startup rollback,
   idempotent close, and absence of ambient dependency lookup.
+- Contract tests prove schema strictness, bounded parsing, generated-artifact drift,
+  migration compatibility, safe diagnostics, and non-mutating validation.
 
 Architecture fixtures must prove that every forbidden dependency edge fails and every
 documented allowed edge passes. Regex-only import checks are insufficient.
@@ -334,3 +437,9 @@ distributed consistency remain separate decisions.
   https://blog.ploeh.dk/2011/07/28/CompositionRoot/
 - Martin Fowler, Dependency Composition:
   https://martinfowler.com/articles/dependency-composition.html
+- JSON Schema Draft 2020-12:
+  https://json-schema.org/draft/2020-12
+- Ajv schema management and standalone validators:
+  https://ajv.js.org/guide/managing-schemas.html
+- Ajv security considerations:
+  https://ajv.js.org/security.html
