@@ -4,15 +4,18 @@
 
 - Status: planned
 - Base branch: `main`
-- Base commit: `a853a7abd1d4950126f7b104b04b74ec1d92c604`
+- Base commit: set at dispatch
 - Worker branch:
 - Worktree:
-- Dependencies: none
+- Dependencies: TASK-009
 
 ## Mission
 
 Add machine-local profiles, safe project-to-profile binding, and local persistence
 without writing toolkit artifacts into repositories using zero-footprint mode.
+
+This is a post-MVP epic. Decompose registry/storage, profile policy, project binding,
+and retention/backup into child packets before dispatch.
 
 ## Scope
 
@@ -352,6 +355,7 @@ unresolved policy decision would be embedded as a default.
 
 ## Definition of Done
 
+- [ ] Epic was decomposed before dispatch.
 - [ ] Acceptance criteria demonstrated.
 - [ ] Verification passed on supported Node LTS versions.
 - [ ] Diff stayed inside the write-set.

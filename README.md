@@ -4,6 +4,10 @@ A portable Node.js CLI and ESM package for bootstrapping and validating a reposi
 control plane for agentic work. It does not assume a programming language, build
 system, hosting provider, repository name, or local filesystem layout.
 
+The current release boundary is documented in [`docs/MVP.md`](docs/MVP.md). The
+target architecture and post-MVP backlog are intentionally broader and do not block
+the initial release.
+
 ## Requirements
 
 - Node.js 22.13.0 or newer

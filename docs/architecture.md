@@ -1,8 +1,11 @@
 # Toolkit Architecture
 
-This document defines the target architecture delivered by TASK-009. Until that task
-is integrated, the current flat JavaScript layout is legacy structure, not precedent
-for new modules.
+This document defines the post-MVP target architecture delivered incrementally by
+approved Task Packets. Until TASK-009 is integrated, the current flat JavaScript
+layout is legacy structure, not precedent for new modules.
+
+The current release boundary is `docs/MVP.md`. A future contract described here does
+not become an MVP dependency merely because its design is documented.
 
 ## Architectural Style
 
@@ -383,6 +386,115 @@ diagnostic evidence, returns an `internal.unexpected` problem with a correlation
 and terminates or reports failure according to that interface. It never silently
 converts an unexpected defect into a normal domain failure.
 
+## Observability, Evidence, and Audit (Post-MVP)
+
+The toolkit separates three signals that must not share authority or failure
+semantics:
+
+| Signal | Purpose | Authority | Typical sink |
+|---|---|---|---|
+| Operational telemetry | diagnose health, latency, failures, and capacity | never authoritative | local JSONL or optional OpenTelemetry |
+| Workflow evidence | prove what gate, task, adapter, or review action occurred | evidence only; board and Task Packets remain authoritative | evidence store owned by workflow/conformance |
+| Security audit | record sensitive identity, policy, storage, sync, and override actions | append-only record governed by profile/managed policy | policy-approved audit store |
+
+Telemetry cannot satisfy an evidence or audit obligation. Evidence cannot mutate the
+board, approve a gate, or become memory automatically. Audit is not a debug log and
+does not contain content merely because an action touched it.
+
+### Typed Events
+
+Each signal has a separate application-owned port and a versioned closed event union.
+Producers emit structured values, never formatted log strings:
+
+```text
+event schema version
+event ID
+event name and category
+occurred-at timestamp
+severity or outcome
+capability and stable reason code
+operation and correlation IDs
+optional trace/span IDs
+bounded allowlisted attributes
+```
+
+Event names and toolkit-specific attribute names use the
+`agentic.workflow.*` namespace. Event schemas follow the external-contract rules and
+are generated, validated, and versioned like other machine contracts.
+
+The operation context creates correlation and operation IDs explicitly. Adapters may
+map trusted W3C Trace Context to trace/span IDs, but domain/application code does not
+parse headers or depend on OpenTelemetry types. Profile, project, task, session, and
+device references are opaque scoped IDs. Metrics never use those IDs, paths, error
+messages, model names, or other unbounded values as dimensions.
+
+### Data Minimization
+
+Events are constructed from an allowlist and sanitized before any sink receives them.
+The following are prohibited by default:
+
+- prompts, model responses, transcripts, source or file contents;
+- raw tool input/output and command lines;
+- environment values, credentials, tokens, secrets, or authorization material;
+- raw paths, remotes, URLs, hostnames, usernames, email addresses, or customer data;
+- SQL statements, rejected payload values, exception stacks, or native provider
+  payloads;
+- arbitrary objects serialized under `metadata`, `context`, or similar escape fields.
+
+Allowed metadata is limited to opaque IDs, stable codes, versions, bounded counts,
+durations, sizes, retry counts, capability names, adapter fidelity, and outcomes.
+Diagnostic causes remain in the separately protected evidence mechanism described by
+the failure contract and are referenced only by correlation ID.
+
+Redaction is deterministic, allowlist-based, tested with canary secrets, and applied
+again at sink boundaries as defense in depth. An LLM never decides what may be
+recorded.
+
+### Operational Telemetry Port
+
+The application port is provider-neutral and non-authoritative. The default adapter
+writes UTF-8 NDJSON outside repositories:
+
+- profileless startup events use a machine-local metadata-only file;
+- after explicit profile selection, events are isolated by profile;
+- each line is one schema-valid event with newline-safe serialization;
+- rotation, retention, quota, file permissions, flush, and recovery are explicit;
+- zero-footprint mode never writes telemetry into the target repository.
+
+The queue is bounded. Low-severity events may be sampled or dropped under pressure;
+warnings, errors, drop counters, and sink-health transitions are prioritized. The
+sink must not recursively report its own failure through itself. Telemetry failure
+never changes a domain decision or weakens a gate.
+
+An optional OpenTelemetry infrastructure adapter maps the same typed events to the
+stable OpenTelemetry Logs data model and may derive low-cardinality metrics and
+spans. The core package does not require an OpenTelemetry SDK or exporter. Export is
+disabled until explicitly configured by profile or managed policy, and it receives
+only the already-sanitized event projection.
+
+### Evidence and Audit Ports
+
+Workflow evidence and security audit use separate durable ports and queues. They are
+not sampled or silently dropped. Evidence records reference exact task, head commit,
+gate, adapter version, capability level, result, and correlation IDs without copying
+large artifacts.
+
+Audit covers at least profile binding changes, override attempts, policy changes,
+purge, restore, export/promotion, sync join/forget/reset, schema migration, credential
+configuration, and observability-policy changes. It records actor category, action,
+target scope, policy decision, outcome, and before/after digests where safe, never
+raw protected values.
+
+Whether an unavailable evidence or audit sink blocks a requested action is a
+policy-class decision owned by TASK-010. It must never be inferred by the adapter.
+
+### Cost and Cardinality
+
+Every signal defines per-event byte limits, queue limits, rotation/retention policy,
+and health counters. Attribute values are bounded before allocation or serialization.
+Metrics use a reviewed fixed dimension set. Debug verbosity, sampling, and optional
+OpenTelemetry export are policy-controlled and observable.
+
 ## Test Boundaries
 
 - Domain tests are pure and require no I/O.
@@ -398,6 +510,9 @@ converts an unexpected defect into a normal domain failure.
   idempotent close, and absence of ambient dependency lookup.
 - Contract tests prove schema strictness, bounded parsing, generated-artifact drift,
   migration compatibility, safe diagnostics, and non-mutating validation.
+- Observability tests prove signal separation, deterministic redaction, canary-secret
+  exclusion, bounded queues, drop accounting, profile isolation, stable correlation,
+  low-cardinality metrics, and sink-failure behavior.
 
 Architecture fixtures must prove that every forbidden dependency edge fails and every
 documented allowed edge passes. Regex-only import checks are insufficient.
@@ -443,3 +558,9 @@ distributed consistency remain separate decisions.
   https://ajv.js.org/guide/managing-schemas.html
 - Ajv security considerations:
   https://ajv.js.org/security.html
+- OpenTelemetry Logs data model:
+  https://opentelemetry.io/docs/specs/otel/logs/data-model/
+- W3C Trace Context:
+  https://www.w3.org/TR/trace-context/
+- OWASP Logging Cheat Sheet:
+  https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html

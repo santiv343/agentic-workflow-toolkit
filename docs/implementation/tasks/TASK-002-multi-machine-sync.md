@@ -2,9 +2,9 @@
 
 ## Metadata
 
-- Status: planned
+- Status: deferred
 - Base branch: `main`
-- Base commit: `313fcd6`
+- Base commit: set at dispatch
 - Worker branch:
 - Worktree:
 - Dependencies: TASK-001
@@ -13,6 +13,9 @@
 
 Synchronize policy-permitted profile data between machines without copying SQLite files,
 mixing profiles, or requiring the toolkit core to depend on one remote provider.
+
+This is a post-MVP epic. Decompose protocol/merge, local inbox/outbox, file transport,
+and device lifecycle/compaction into child packets before dispatch.
 
 ## Scope
 
@@ -309,6 +312,7 @@ one provider, hides a conflict, weakens policy, or lacks a recovery path.
 
 ## Definition of Done
 
+- [ ] Epic was decomposed before dispatch.
 - [ ] Acceptance criteria demonstrated.
 - [ ] Verification passed.
 - [ ] Threat model and protocol are documented.

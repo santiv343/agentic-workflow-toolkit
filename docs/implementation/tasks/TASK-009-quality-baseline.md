@@ -7,12 +7,16 @@
 - Base commit: set at dispatch
 - Worker branch:
 - Worktree:
-- Dependencies: none
+- Dependencies: TASK-011
 
 ## Mission
 
 Migrate the toolkit to strict compiled TypeScript and establish deterministic quality
 gates before storage, sync, MCP, skills, and native adapters expand the codebase.
+
+This is a post-MVP foundation epic. Decompose build/tooling, source migration,
+external contracts, and architecture enforcement into independently integrated child
+packets before dispatch.
 
 ## Scope
 
@@ -56,11 +60,11 @@ Excluded:
 - `package.json`
 - `docs/architecture.md`
 - `src/index.js`
-- `src/cli.js`
 - `docs/implementation/orchestration-board.md`
 
 ### On demand
 
+- relevant sections of `src/cli.js` selected by command, boundary, or behavior
 - remaining `src/*.js`
 - relevant sections of `test/cli.test.js` selected by command or behavior
 - `schema/workflow.schema.json`
@@ -406,6 +410,7 @@ future feature implementation into the baseline.
 
 ## Definition of Done
 
+- [ ] Epic was decomposed before dispatch.
 - [ ] Acceptance criteria demonstrated.
 - [ ] Verification passed.
 - [ ] Diff stayed inside the write-set.
