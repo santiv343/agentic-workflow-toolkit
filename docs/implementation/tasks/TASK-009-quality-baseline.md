@@ -4,7 +4,7 @@
 
 - Status: planned
 - Base branch: `main`
-- Base commit: `f785a1d`
+- Base commit: set at dispatch
 - Worker branch:
 - Worktree:
 - Dependencies: none
@@ -23,6 +23,7 @@ Included:
 - ESLint flat configuration and deterministic formatting;
 - public API and boundary type contracts;
 - typed result and failure contracts;
+- explicit typed dependency composition and resource lifecycle;
 - modular-monolith ports-and-adapters structure and architecture tests;
 - package metadata and release mechanics for compiled output;
 - incremental refactoring required to type existing behavior safely.
@@ -184,6 +185,43 @@ Excluded:
   variants.
   - Evidence: these patterns defeat exhaustiveness or blur the expected/unexpected
     boundary.
+- Decision: use Pure DI with explicit readonly dependency objects, typed factory
+  functions, and manual wiring under `composition`.
+  - Evidence: approved option C keeps dependencies visible to TypeScript and tests
+    without reflection, decorators, runtime tokens, or container behavior.
+- Decision: split composition by capability and let the top-level root wire only
+  public capability contracts, concrete adapters, lifecycle, and interfaces.
+  - Evidence: one monolithic factory would become a second service locator, while
+    independent roots would hide cross-capability ownership.
+- Decision: create required configuration, policies, migrations, and adapters eagerly
+  before an interface reports ready; use explicit lazy provider ports only for truly
+  optional or expensive capabilities.
+  - Evidence: deterministic startup catches invalid graphs and configuration before
+    partial work begins without forcing unavailable host capabilities to initialize.
+- Decision: scope immutable configuration, stateless use cases, and stateful adapter
+  resources to one runtime; pass request, command, session, cancellation,
+  correlation, authorization, and profile context explicitly per operation.
+  - Evidence: ambient request state and module globals leak data between concurrent
+    users, projects, profiles, and host sessions.
+- Decision: expose one idempotent async runtime close operation, reject new work
+  during shutdown, and release owned resources in reverse construction order while
+  preserving all cleanup failures.
+  - Evidence: CLI, MCP, and long-lived host adapters have different process lifetimes
+    but require the same deterministic ownership semantics.
+- Decision: have unit and application tests call production factories with complete
+  typed fakes; allow only an explicit `TestOverrides` contract at the integration
+  composition boundary.
+  - Evidence: arbitrary `Partial` overrides, module patching, and process-global
+    mutation hide missing dependencies and produce order-dependent tests.
+- Decision: prohibit service lookup APIs, dependency tokens, decorator metadata,
+  mutable module singletons, environment reads inside factories, and injection of a
+  container/runtime object into domain or application code.
+  - Evidence: these practices turn explicit constructor/factory injection back into
+    hidden dependencies.
+- Decision: validate the import graph for dependency cycles and test startup rollback,
+  lifecycle order, idempotent close, and concurrent context isolation.
+  - Evidence: type correctness alone does not prove that the object graph can start,
+    stop, or serve concurrent operations safely.
 
 ## Open Questions
 
@@ -235,6 +273,15 @@ Excluded:
     never expose forbidden diagnostic data.
 13. Known adapter failures map to port-owned failures; unknown exceptions remain
     unexpected and retain a diagnostic cause internally.
+14. Every use case and service receives complete typed dependencies explicitly;
+    production source contains no container, service locator, dependency token,
+    decorator injection, or mutable singleton.
+15. Required runtime construction fails before readiness and rolls back already
+    acquired resources; close is asynchronous, idempotent, and reverse-ordered.
+16. Concurrent operations cannot observe another operation's profile, authorization,
+    cancellation, correlation, command, request, or session context.
+17. Unit/application tests use complete typed fakes, while integration overrides are
+    limited to the declared `TestOverrides` contract.
 
 ## Test Map
 
@@ -253,6 +300,10 @@ Excluded:
 | AC11 | expected failure tests | use case throws or returns loose error | exhaustive `Result` is returned |
 | AC12 | presenter contract tests | surfaces disagree or leak diagnostics | stable safe problem projection |
 | AC13 | adapter failure classification | native error leaks inward or unknown is swallowed | known failure maps and unknown preserves cause |
+| AC14 | composition static fixtures | hidden lookup or incomplete factory passes | explicit typed graph is required |
+| AC15 | lifecycle fault injection | partial startup leaks or close stops early | rollback and reverse idempotent close |
+| AC16 | concurrent context test | context bleeds across operations | each invocation remains isolated |
+| AC17 | test-composition fixtures | arbitrary partial/module patch works | only complete fakes and approved overrides compile |
 
 ## Plan
 
@@ -260,12 +311,14 @@ Excluded:
 2. Add TypeScript, ESLint, and formatting configuration.
 3. Add the architecture dependency matrix and failing forbidden-edge fixtures.
 4. Add failing result, exhaustiveness, classification, and safe-projection fixtures.
-5. Migrate pure domain contracts and application use cases by capability.
-6. Move I/O behind application-owned ports and implement infrastructure adapters.
-7. Migrate CLI entry points into inbound interfaces and add the composition root.
-8. Migrate tests and split oversized mixed-responsibility modules.
-9. Update package exports, bin, build, docs, and changelog.
-10. Run complete verification and inspect the packed artifact.
+5. Add failing composition, context-isolation, startup, and shutdown fixtures.
+6. Migrate pure domain contracts and application use cases by capability.
+7. Move I/O behind application-owned ports and implement infrastructure adapters.
+8. Add capability factories, top-level composition, and explicit lifecycle handling.
+9. Migrate CLI entry points into inbound interfaces.
+10. Migrate tests and split oversized mixed-responsibility modules.
+11. Update package exports, bin, build, docs, and changelog.
+12. Run complete verification and inspect the packed artifact.
 
 ## Stop Conditions
 
@@ -273,7 +326,9 @@ Stop if migration changes public behavior without a separate decision, requires 
 bundler/runtime loader, weakens strict flags, uses assertions to silence boundaries,
 adds empty architectural scaffolding, introduces generic speculative ports, allows
 adapter-to-adapter wiring, throws a declared failure, exposes a raw cause through a
-public interface, or mixes future feature implementation into the baseline.
+public interface, introduces hidden dependency lookup or ambient request state, leaks
+a partially constructed runtime, or mixes future feature implementation into the
+baseline.
 
 ## Definition of Done
 

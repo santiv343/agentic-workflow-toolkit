@@ -85,6 +85,91 @@ Is the only production location allowed to instantiate concrete adapters and con
 them to use cases and inbound interfaces. It contains wiring and lifecycle only, not
 policy. Executable entry points delegate to this composition root.
 
+## Dependency Injection
+
+The toolkit uses Pure DI: explicit arguments, typed factories, and manual wiring.
+There is no DI container, reflection metadata, decorator injection, service locator,
+mutable module singleton, or global dependency registry.
+
+Every use case or application service declares the smallest readonly dependency
+object it needs:
+
+```ts
+export interface CheckWorkflowDependencies {
+  readonly loadWorkflow: LoadWorkflowPort;
+  readonly inspectRepository: InspectRepositoryPort;
+  readonly now: ClockPort;
+}
+
+export function createCheckWorkflow(
+  dependencies: CheckWorkflowDependencies,
+): CheckWorkflow {
+  // Return the use case without resolving anything globally.
+}
+```
+
+Composition is hierarchical without hiding dependencies:
+
+```text
+createWorkflowComposition(dependencies)
+createProfileComposition(dependencies)
+createSyncComposition(dependencies)
+  -> createApplicationRuntime(adapters, configuration)
+  -> createCliInterface(runtime)
+  -> createMcpInterface(runtime)
+```
+
+Capability composition functions may build their own internal graph and return only
+their public application contract. The top-level root owns cross-capability wiring,
+resource startup, and interface construction. Composition modules may call one
+another only through explicit parameters and return values.
+
+### Lifetimes
+
+- Immutable configuration and validated policy are created once per runtime.
+- Stateful outbound adapters such as SQLite connections, evidence stores, and
+  transport sessions are runtime-scoped unless their contract requires a shorter
+  lifetime.
+- Stateless use cases may be runtime-scoped; factories must not rely on identity or
+  hidden mutable caches.
+- Command, request, session, cancellation, correlation, authorization, and profile
+  context are explicit input values. They are never stored in globals or ambient
+  async state.
+- Optional or expensive capabilities use an explicit lazy provider port only when
+  startup cost or host capability requires it. General dependencies are eager.
+
+Every required dependency, configuration value, schema compatibility check, and
+storage migration is validated before an interface reports ready. Startup is
+transactional where possible: if construction fails, already-created resources are
+closed in reverse order.
+
+The runtime exposes one idempotent asynchronous close operation. It rejects new work,
+lets owned in-flight operations follow their documented cancellation policy, and
+closes resources in reverse construction order. Cleanup failures retain every cause
+rather than stopping after the first one.
+
+### Test Composition
+
+Unit and application tests call the same factories with complete typed fake port
+objects. Missing dependencies are compile errors.
+
+Root-level overrides are reserved for integration and conformance tests. They use an
+explicit `TestOverrides` contract containing only approved replaceable ports. The
+production root does not accept arbitrary `Partial` objects, string tokens, or
+untyped maps, and tests do not patch imported modules or process globals.
+
+### Dependency Rules
+
+- Factories are pure unless their name and return type declare resource acquisition.
+- Constructors and factories do not read environment variables or configuration
+  files; validated configuration is passed in.
+- Domain objects never receive adapters or a runtime/container object.
+- Application code never calls `resolve`, `getService`, or equivalent lookup APIs.
+- Interfaces receive the public runtime contract, not the composition internals.
+- Dependency cycles are forbidden and checked from the TypeScript import graph.
+- Dynamic host or memory-provider discovery produces a typed adapter descriptor;
+  only composition may instantiate the selected implementation.
+
 ### `shared/`
 
 Contains only stable, pure, capability-neutral primitives. It has no I/O, mutable
@@ -208,6 +293,8 @@ converts an unexpected defect into a normal domain failure.
 - Architecture tests parse TypeScript imports and enforce this document.
 - Failure-contract tests prove exhaustive mappings, safe public projections, and
   preservation of unexpected causes without leaking them.
+- Composition tests prove complete explicit wiring, lifecycle order, startup rollback,
+  idempotent close, and absence of ambient dependency lookup.
 
 Architecture fixtures must prove that every forbidden dependency edge fails and every
 documented allowed edge passes. Regex-only import checks are insufficient.
@@ -243,3 +330,7 @@ distributed consistency remain separate decisions.
   https://nodejs.org/api/errors.html
 - RFC 9457, machine-readable problem details:
   https://www.rfc-editor.org/info/rfc9457/
+- Mark Seemann, Composition Root:
+  https://blog.ploeh.dk/2011/07/28/CompositionRoot/
+- Martin Fowler, Dependency Composition:
+  https://martinfowler.com/articles/dependency-composition.html
