@@ -237,10 +237,36 @@ Excluded:
 - Decision: keep zero-footprint identity, confirmations, and lineage entirely outside
   the repository; managed mode may add a non-private versioned marker.
   - Evidence: restricted repositories cannot accept toolkit artifacts.
+- Decision: allow temporary profile overrides for read-only commands when effective
+  policy permits access.
+  - Evidence: inspection and diagnostics do not mutate profile or project state.
+- Decision: require interactive confirmation or `--allow-profile-override` for
+  profile-scoped writes when the requested profile differs from the project binding.
+  - Evidence: approved option D preserves automation while making contamination
+    explicit.
+- Decision: show project, bound profile, requested profile, effect, and data classes
+  before confirming an override write.
+  - Evidence: consent requires an observable impact preview.
+- Decision: never rewrite bindings from `--profile`,
+  `AGENTIC_WORKFLOW_PROFILE`, or `--allow-profile-override`.
+  - Evidence: persistent identity changes require attach, detach, or rebind commands.
+- Decision: prohibit project-scoped cross-profile writes through override flags.
+  - Evidence: overrides select execution context; they do not authorize data
+    transfer.
+- Decision: implement cross-profile export or promotion as a separate sanitized,
+  previewed copy with provenance.
+  - Evidence: transferring knowledge must not move original rows or bypass data-class
+    policy.
+- Decision: keep destructive confirmation separate from profile-override consent.
+  - Evidence: `--allow-profile-override` must not imply `--yes` for purge, restore, or
+    detach.
+- Decision: allow managed policy to reject overrides completely and audit every
+  attempted write override.
+  - Evidence: corporate constraints remain authoritative.
 
 ## Open Questions
 
-- How should explicit overrides interact with commands that mutate persistent state?
+- none
 
 ## Assumptions
 
@@ -282,6 +308,8 @@ Excluded:
 16. Moves and worktrees preserve identity while clones, remote changes, forks, and
     history replacement require the documented confirmation flow.
 17. Derived identities record lineage without implicit memory sharing.
+18. Overrides are observable, do not mutate bindings, and cannot transfer
+    project-scoped data across profiles.
 
 ## Test Map
 
@@ -304,6 +332,7 @@ Excluded:
 | AC15 | backup and restore | active DB is copied or overwritten first | consistent candidate validates before atomic swap |
 | AC16 | project identity changes | path or remote silently reassigns memory | evidence rules preserve or block as documented |
 | AC17 | derived project | source memory becomes searchable | lineage exists but storage and search stay isolated |
+| AC18 | read/write/destructive override matrix | flag silently broadens authority | each effect requires its documented consent and policy |
 
 ## Plan
 

@@ -33,6 +33,47 @@ Excluded:
 - using backup as synchronization;
 - weakening local data-class, retention, or managed policies.
 
+## Ownership
+
+- Write-set: `src/sync/`, sync-facing additions in `src/cli.js` and `src/index.js`,
+  `test/sync*.test.js`, sync fixtures, `README.md`, `CHANGELOG.md`
+- Read-set: profile and storage APIs delivered by TASK-001, existing CLI helpers,
+  Knowledge Hub sync decisions
+- Forbidden-set: consumer repositories, profile database internals outside public
+  storage ports, unrelated templates, external CLI configuration
+- Exclusive resources: sync protocol version, envelope schema, transport conformance
+  contract
+
+## Context Route
+
+### Required
+
+- `AGENTS.md`
+- `docs/implementation/tasks/TASK-001-profile-persistence.md`
+- `00-agentic-engineering/13-profiles-zero-footprint-and-portability.md` in the
+  Knowledge Hub
+
+### On demand
+
+- profile storage ports implemented by TASK-001
+- `src/cli.js`
+- `src/index.js`
+- `test/cli.test.js`
+- `00-agentic-engineering/09-capability-adoption-and-memory.md` in the Knowledge Hub
+
+### Discovery
+
+- public profile record and policy interfaces
+- CLI command dispatch and streaming filesystem helpers
+- checksum and atomic-replacement facilities available in supported Node versions
+
+### Do not preload
+
+- consumer-project source code
+- raw profile databases
+- unrelated Knowledge Hub domains
+- full historical conversations
+
 ## Decisions
 
 - Decision: keep one local SQLite database per profile and machine.
@@ -179,6 +220,23 @@ Excluded:
 ## Open Questions
 
 - none
+
+## Assumptions
+
+- Assumption: TASK-001 exposes storage and policy ports without leaking
+  `node:sqlite` into the sync domain.
+  - Evidence: TASK-001 requires SQLite to remain behind a toolkit-owned adapter.
+- Assumption: supported filesystems can create a temporary sibling and replace the
+  target file, or report that atomic replacement is unavailable.
+  - Evidence: the accepted failure policy preserves the original bundle when safe
+    replacement cannot be demonstrated.
+- Assumption: users can transfer a plaintext file between machines for the first
+  transport.
+  - Evidence: this is the explicitly selected v1 sync workflow.
+- Assumption: profile policy can classify outgoing and incoming records before the
+  sync engine applies them.
+  - Evidence: TASK-001 defines closed data classes and deny-by-default profile
+    allowlists.
 
 ## Documentation Impact
 
