@@ -22,6 +22,7 @@ Included:
 - ESM build output and declaration files;
 - ESLint flat configuration and deterministic formatting;
 - public API and boundary type contracts;
+- typed result and failure contracts;
 - modular-monolith ports-and-adapters structure and architecture tests;
 - package metadata and release mechanics for compiled output;
 - incremental refactoring required to type existing behavior safely.
@@ -53,12 +54,12 @@ Excluded:
 - `docs/architecture.md`
 - `src/index.js`
 - `src/cli.js`
-- `test/cli.test.js`
 - `docs/implementation/orchestration-board.md`
 
 ### On demand
 
 - remaining `src/*.js`
+- relevant sections of `test/cli.test.js` selected by command or behavior
 - `schema/workflow.schema.json`
 - package dry-run output
 - downstream Task Packets for required public contracts
@@ -155,6 +156,34 @@ Excluded:
   services during TASK-009.
   - Evidence: module boundaries are needed now, while distributed operation and
     package management are not.
+- Decision: model declared domain, application, and classified operational failures
+  with a shared discriminated `Result<TValue, TFailure>` primitive and
+  capability-owned failure unions.
+  - Evidence: approved option C makes expected control flow explicit and exhaustive
+    without coupling every capability to an exception hierarchy.
+- Decision: reserve exceptions for defects, violated internal invariants, and
+  genuinely unclassified failures.
+  - Evidence: an unexpected exception must remain distinguishable from a policy
+    denial, conflict, invalid input, cancellation, or unavailable dependency.
+- Decision: require infrastructure adapters to translate only deterministically
+  recognized native failures into the failure union declared by their application
+  port.
+  - Evidence: passing Node.js, SQLite, transport, or provider error shapes inward
+    would leak technology and make callers non-portable.
+- Decision: define one safe public problem projection mapped by CLI, JSON, MCP, and
+  host presenters from stable namespaced failure codes.
+  - Evidence: human messages and numeric exit codes are presentation details, while
+    agents and integrations need a versioned machine contract.
+- Decision: catch unexpected exceptions once at the outermost interface, preserve
+  sanitized diagnostic evidence behind a correlation ID, and expose only
+  `internal.unexpected`.
+  - Evidence: stacks and raw causes aid diagnosis but may contain paths, secrets, SQL,
+    provider payloads, or tool output.
+- Decision: prohibit expected-failure classes, thrown strings, optional-property
+  error bags, silent catch blocks, and default branches that hide new failure
+  variants.
+  - Evidence: these patterns defeat exhaustiveness or blur the expected/unexpected
+    boundary.
 
 ## Open Questions
 
@@ -200,6 +229,12 @@ Excluded:
    MCP, or host SDK setup.
 10. Public entry points delegate through composition and no inbound adapter imports a
     concrete outbound adapter.
+11. Every declared failure path returns an exhaustive typed result; domain and
+    application code do not throw for expected outcomes.
+12. CLI, JSON, MCP, and host projections preserve the same stable failure code and
+    never expose forbidden diagnostic data.
+13. Known adapter failures map to port-owned failures; unknown exceptions remain
+    unexpected and retain a diagnostic cause internally.
 
 ## Test Map
 
@@ -215,25 +250,30 @@ Excluded:
 | AC8 | architecture fixtures | forbidden import passes | architecture gate blocks it |
 | AC9 | pure core tests | core test requires I/O or SDK setup | in-memory tests run in isolation |
 | AC10 | composition fixture | inbound adapter selects infrastructure | only composition wires concrete adapters |
+| AC11 | expected failure tests | use case throws or returns loose error | exhaustive `Result` is returned |
+| AC12 | presenter contract tests | surfaces disagree or leak diagnostics | stable safe problem projection |
+| AC13 | adapter failure classification | native error leaks inward or unknown is swallowed | known failure maps and unknown preserves cause |
 
 ## Plan
 
 1. Add failing package, compiler, lint, and architecture fixtures.
 2. Add TypeScript, ESLint, and formatting configuration.
 3. Add the architecture dependency matrix and failing forbidden-edge fixtures.
-4. Migrate pure domain contracts and application use cases by capability.
-5. Move I/O behind application-owned ports and implement infrastructure adapters.
-6. Migrate CLI entry points into inbound interfaces and add the composition root.
-7. Migrate tests and split oversized mixed-responsibility modules.
-8. Update package exports, bin, build, docs, and changelog.
-9. Run complete verification and inspect the packed artifact.
+4. Add failing result, exhaustiveness, classification, and safe-projection fixtures.
+5. Migrate pure domain contracts and application use cases by capability.
+6. Move I/O behind application-owned ports and implement infrastructure adapters.
+7. Migrate CLI entry points into inbound interfaces and add the composition root.
+8. Migrate tests and split oversized mixed-responsibility modules.
+9. Update package exports, bin, build, docs, and changelog.
+10. Run complete verification and inspect the packed artifact.
 
 ## Stop Conditions
 
 Stop if migration changes public behavior without a separate decision, requires a
 bundler/runtime loader, weakens strict flags, uses assertions to silence boundaries,
 adds empty architectural scaffolding, introduces generic speculative ports, allows
-adapter-to-adapter wiring, or mixes future feature implementation into the baseline.
+adapter-to-adapter wiring, throws a declared failure, exposes a raw cause through a
+public interface, or mixes future feature implementation into the baseline.
 
 ## Definition of Done
 
