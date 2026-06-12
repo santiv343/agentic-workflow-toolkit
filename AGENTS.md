@@ -18,6 +18,7 @@ tool defaults.
 
 - This repository owns executable package code, schema, templates, tests, usage,
   security, contribution, changelog, and release mechanics.
+- `docs/architecture.md` is the canonical dependency and module-boundary contract.
 - Cross-project methodology, pain catalogs, practice references, and general learning
   live in the separate Knowledge Hub. Link to them; do not copy them here.
 - Consumer-project architecture, domain policy, risk, and ownership never belong in

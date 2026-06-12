@@ -49,6 +49,7 @@ Excluded:
 ### Required
 
 - `AGENTS.md`
+- `docs/architecture.md`
 - `README.md`
 - `docs/implementation/orchestration-board.md`
 - `00-agentic-engineering/13-profiles-zero-footprint-and-portability.md` in the

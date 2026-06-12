@@ -4,7 +4,7 @@
 
 - Status: planned
 - Base branch: `main`
-- Base commit: `f17982e`
+- Base commit: `f785a1d`
 - Worker branch:
 - Worktree:
 - Dependencies: none
@@ -22,7 +22,7 @@ Included:
 - ESM build output and declaration files;
 - ESLint flat configuration and deterministic formatting;
 - public API and boundary type contracts;
-- architecture-test foundation;
+- modular-monolith ports-and-adapters structure and architecture tests;
 - package metadata and release mechanics for compiled output;
 - incremental refactoring required to type existing behavior safely.
 
@@ -50,6 +50,7 @@ Excluded:
 
 - `AGENTS.md`
 - `package.json`
+- `docs/architecture.md`
 - `src/index.js`
 - `src/cli.js`
 - `test/cli.test.js`
@@ -124,6 +125,36 @@ Excluded:
 - Decision: preserve behavior during migration and make public-path changes explicit
   in one versioned release.
   - Evidence: quality migration must not silently alter CLI semantics.
+- Decision: structure the toolkit as a modular monolith with `domain`,
+  `application`, `infrastructure`, `interfaces`, `composition`, and minimal `shared`
+  layers.
+  - Evidence: approved option C keeps one deployable package while preserving
+    replaceable adapters and independently testable policy.
+- Decision: organize domain and application behavior by capability: workflow,
+  profiles, sync, skills, and conformance.
+  - Evidence: layer-only folders would still allow unrelated capabilities to become
+    one coupled model.
+- Decision: define outbound ports in the application capability that consumes them.
+  - Evidence: ports should express use-case needs rather than infrastructure-shaped
+    generic repositories.
+- Decision: allow concrete adapter construction only in `composition`.
+  - Evidence: CLI, MCP, and host adapters must not select SQLite, filesystem,
+    transport, or memory implementations themselves.
+- Decision: permit cross-capability imports only through explicit public contracts;
+  behavior crosses through application ports or versioned events.
+  - Evidence: private-file imports and shared persistence would make later extraction
+    unsafe.
+- Decision: keep `shared` pure, capability-neutral, and promotion-based.
+  - Evidence: a general utilities directory otherwise becomes an unowned coupling
+    point.
+- Decision: enforce dependency direction with TypeScript-AST architecture tests and
+  positive and negative fixtures.
+  - Evidence: directory conventions and regex scans are too easy for agents to
+    violate or misread.
+- Decision: retain one package and one release; do not create workspace packages or
+  services during TASK-009.
+  - Evidence: module boundaries are needed now, while distributed operation and
+    package management are not.
 
 ## Open Questions
 
@@ -139,11 +170,15 @@ Excluded:
     validation responsibilities.
 - Assumption: downstream tasks can target the compiled public ports after migration.
   - Evidence: TASK-001 and TASK-003 now depend on this baseline.
+- Assumption: current commands can be migrated capability by capability without
+  preserving the flat source filenames as public contracts.
+  - Evidence: package exports and CLI behavior, rather than private source paths, are
+    the documented compatibility surface.
 
 ## Documentation Impact
 
-- Update: `README.md`, `CHANGELOG.md`, development commands, package exports, and
-  contribution guidance.
+- Update: `docs/architecture.md`, `README.md`, `CHANGELOG.md`, development commands,
+  package exports, and contribution guidance.
 - Reason: build, source language, package entry points, and verification change.
 
 ## Acceptance Criteria
@@ -159,7 +194,12 @@ Excluded:
 7. Verification executes every documented gate; temporary test output is cleaned and
    excluded; package dry-run contains compiled runtime files and declarations, not
    TypeScript source or test artifacts.
-8. Source modules follow the approved dependency boundaries.
+8. Source modules follow `docs/architecture.md`; every forbidden dependency edge has
+   a failing fixture and every allowed layer edge has a passing fixture.
+9. Domain and application tests run without filesystem, process, database, network,
+   MCP, or host SDK setup.
+10. Public entry points delegate through composition and no inbound adapter imports a
+    concrete outbound adapter.
 
 ## Test Map
 
@@ -173,22 +213,27 @@ Excluded:
 | AC6 | lint fixtures | async/union hazards pass | lint reports each hazard |
 | AC7 | verify, clean test build, and pack inspection | a gate or compiled file is missing | complete pipeline and package |
 | AC8 | architecture fixtures | forbidden import passes | architecture gate blocks it |
+| AC9 | pure core tests | core test requires I/O or SDK setup | in-memory tests run in isolation |
+| AC10 | composition fixture | inbound adapter selects infrastructure | only composition wires concrete adapters |
 
 ## Plan
 
 1. Add failing package, compiler, lint, and architecture fixtures.
 2. Add TypeScript, ESLint, and formatting configuration.
-3. Migrate shared low-level modules and public contracts first.
-4. Migrate CLI and feature modules while keeping tests green.
-5. Migrate tests and split oversized mixed-responsibility modules.
-6. Update package exports, bin, build, docs, and changelog.
-7. Run complete verification and inspect the packed artifact.
+3. Add the architecture dependency matrix and failing forbidden-edge fixtures.
+4. Migrate pure domain contracts and application use cases by capability.
+5. Move I/O behind application-owned ports and implement infrastructure adapters.
+6. Migrate CLI entry points into inbound interfaces and add the composition root.
+7. Migrate tests and split oversized mixed-responsibility modules.
+8. Update package exports, bin, build, docs, and changelog.
+9. Run complete verification and inspect the packed artifact.
 
 ## Stop Conditions
 
 Stop if migration changes public behavior without a separate decision, requires a
 bundler/runtime loader, weakens strict flags, uses assertions to silence boundaries,
-or mixes future feature implementation into the baseline.
+adds empty architectural scaffolding, introduces generic speculative ports, allows
+adapter-to-adapter wiring, or mixes future feature implementation into the baseline.
 
 ## Definition of Done
 
