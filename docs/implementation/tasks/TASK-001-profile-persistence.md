@@ -139,10 +139,40 @@ Excluded:
   every preset.
   - Evidence: their privacy, security, storage, and retention costs require explicit
     opt-in rather than an implicit default.
+- Decision: combine TTL per data class, a total profile quota, LRU eviction under
+  quota pressure, and explicit pins.
+  - Evidence: selected option D bounds age and disk usage without discarding
+    intentionally preserved records.
+- Decision: calculate expiry from the effective write policy and never extend TTL on
+  read.
+  - Evidence: access frequency must not silently turn temporary data into permanent
+    storage.
+- Decision: purge managed hard-limit violations first, then expired unpinned records,
+  then unpinned LRU records until the profile is within quota.
+  - Evidence: managed policy is authoritative and ordinary cleanup should preserve
+    explicit pins.
+- Decision: require each pin to identify a record, actor, reason, and policy-bounded
+  effective expiration; the caller may request an earlier expiration.
+  - Evidence: pins are policy exceptions that must remain bounded and auditable.
+- Decision: allow non-expiring pins only through explicit managed policy, never in
+  built-in presets.
+  - Evidence: an omitted caller expiration must not create hidden indefinite
+    retention.
+- Decision: pins do not override prohibited content, managed maxima, explicit purge,
+  or secret-incident response.
+  - Evidence: preservation intent cannot weaken security or organizational policy.
+- Decision: reject new writes when pinned records consume the available quota rather
+  than silently deleting or unpinning them.
+  - Evidence: destructive conflict resolution requires an explicit human or managed
+    policy decision.
+- Decision: run bounded maintenance on profile open, near-quota writes, and an
+  explicit maintenance command without requiring an LLM or daemon.
+  - Evidence: retention behavior should be portable, deterministic, and observable.
 
 ## Open Questions
 
-- What are the default retention, purge, and backup policies?
+- What numeric TTLs and quotas should each preset use?
+- What backup policy should each preset use?
 - Which fingerprint changes require rebind versus migration?
 - How should explicit overrides interact with commands that mutate persistent state?
 
@@ -175,6 +205,9 @@ Excluded:
    before durable storage.
 10. Profile presets expose their effective allowlist and never enable raw content by
     default.
+11. Retention applies the documented hard-limit, expiry, and LRU order without using
+    an LLM.
+12. Pins are auditable, bounded, and never weaken managed or security limits.
 
 ## Test Map
 
@@ -190,6 +223,8 @@ Excluded:
 | AC8 | registry schema and write API | content fields can be stored | only allowlisted routing metadata is accepted |
 | AC9 | memory write policy | unsafe record reaches SQLite | validation rejects it with an observable reason |
 | AC10 | preset conformance | raw content is enabled implicitly | effective policy matches the documented allowlist |
+| AC11 | retention maintenance | records survive or purge nondeterministically | hard limits, TTL, and LRU run in fixed order |
+| AC12 | pin pressure and overrides | pins bypass policy or disappear silently | writes stop and status reports the conflict |
 
 ## Plan
 
