@@ -110,10 +110,38 @@ Excluded:
   migration-incompatible.
   - Evidence: scanning profile databases or guessing a binding would weaken the
     selected isolation policy.
+- Decision: require every persisted record to use a closed, versioned data class.
+  - Evidence: generic blobs prevent enforceable retention, sanitization, and profile
+    policy.
+- Decision: support `operational_metadata`, `artifact_reference`,
+  `session_summary`, `episodic_memory`, `learning_candidate`, `raw_transcript`,
+  `tool_payload`, and `content_snapshot` as explicit classes.
+  - Evidence: these separate technical routing and bounded memory from high-risk raw
+    content.
+- Decision: use deny-by-default profile allowlists, with deny taking precedence and
+  unknown classes rejected.
+  - Evidence: adapters must not expand persistence through omission or fallback.
+- Decision: prohibit secrets and credentials without override, regardless of class.
+  - Evidence: a class label cannot make credential storage safe.
+- Decision: classify, validate, scan, sanitize, revalidate, then persist.
+  - Evidence: sanitization must happen before durable storage and its output must
+    still satisfy the policy.
+- Decision: provide conservative `personal`, `work`, `restricted`, and `disabled`
+  presets.
+  - Evidence: selected option D combines explicit classes with usable defaults while
+    allowing stricter project or organizational policy.
+- Decision: enable metadata, summaries, and episodic memory for `personal`; metadata
+  and sanitized summaries for `work`; content-free metadata for `restricted`; and no
+  persistence for `disabled`.
+  - Evidence: these are the approved defaults; artifact references and learning
+    candidates remain explicit opt-ins.
+- Decision: disable raw transcripts, full tool payloads, and content snapshots in
+  every preset.
+  - Evidence: their privacy, security, storage, and retention costs require explicit
+    opt-in rather than an implicit default.
 
 ## Open Questions
 
-- What exact data classes may each profile persist?
 - What are the default retention, purge, and backup policies?
 - Which fingerprint changes require rebind versus migration?
 - How should explicit overrides interact with commands that mutate persistent state?
@@ -143,6 +171,10 @@ Excluded:
 7. SQLite failures degrade without weakening critical project gates.
 8. The global registry contains routing metadata only and never stores project or
    conversation content.
+9. Unknown, denied, oversized, unsanitized, or secret-bearing records are rejected
+   before durable storage.
+10. Profile presets expose their effective allowlist and never enable raw content by
+    default.
 
 ## Test Map
 
@@ -156,6 +188,8 @@ Excluded:
 | AC6 | zero-footprint integration | repo contains changes | `git status` remains unchanged |
 | AC7 | unavailable or corrupt database | gates weaken or crash unclearly | degraded status is explicit and gates remain |
 | AC8 | registry schema and write API | content fields can be stored | only allowlisted routing metadata is accepted |
+| AC9 | memory write policy | unsafe record reaches SQLite | validation rejects it with an observable reason |
+| AC10 | preset conformance | raw content is enabled implicitly | effective policy matches the documented allowlist |
 
 ## Plan
 
