@@ -16,6 +16,12 @@ and programmatic API.
   unverified claims and the next human gate.
 - Register a post-MVP behavioral evaluation suite for normal, ambiguous, adversarial,
   multilingual, and multi-agent scenarios.
+- Add packed-artifact end-to-end integration coverage for the complete public MVP
+  journey from an installed package in a clean repository.
+- Verify ambiguous initialization fails through the real CLI without partial writes.
+- Inspect extracted package payloads for private paths, credentials, and undeclared
+  Knowledge Hub data.
+- Assert public documentation matches observable behavior and honest hook limitations.
 
 ## 0.4.0
 
@@ -24,14 +30,6 @@ and programmatic API.
   profile-aware local persistence, isolated behind a toolkit-owned adapter.
 - Avoid native third-party SQLite dependencies and their platform-specific install
   lifecycle.
-- Add packed-artifact end-to-end integration test proving the complete MVP journey
-  from an installed package in a clean repository.
-- Add atomic initialization fixture verifying that conflicting managed files stop the
-  preflight before any writes.
-- Add package-content privacy inspection verifying no machine-specific paths,
-  credentials, or Knowledge Hub artifacts ship in the published tarball.
-- Add documentation assertion test verifying that README and MVP.md match the
-  observable CLI behavior.
 
 ## 0.3.1
 

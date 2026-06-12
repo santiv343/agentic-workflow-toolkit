@@ -5,8 +5,8 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readdir,
   rm,
-  stat,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -16,11 +16,8 @@ import test from 'node:test';
 
 const execFileAsync = promisify(execFile);
 const PROJECT_ROOT = path.resolve('.');
+const CLI_PATH = path.join(PROJECT_ROOT, 'bin', 'agentic-workflow.js');
 const fixtures = [];
-
-function npmCmd() {
-  return process.platform === 'win32' ? 'npm.cmd' : 'npm';
-}
 
 async function runNpm(args, opts = {}) {
   if (process.platform === 'win32') {
@@ -38,6 +35,39 @@ async function createFixture() {
   const fixture = await mkdtemp(path.join(tmpdir(), 'awt-integration-'));
   fixtures.push(fixture);
   return fixture;
+}
+
+async function readTree(root, baseRoot = root) {
+  const contents = [];
+  const entries = await readdir(root, { withFileTypes: true });
+  for (const entry of entries) {
+    const entryPath = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      contents.push(...(await readTree(entryPath, baseRoot)));
+    } else if (entry.isFile()) {
+      contents.push({
+        content: await readFile(entryPath, 'utf8'),
+        path: path.relative(baseRoot, entryPath).replaceAll('\\', '/'),
+      });
+    }
+  }
+  return contents;
+}
+
+async function extractTarball(tgzPath, destination) {
+  await mkdir(destination, { recursive: true });
+  if (process.platform === 'win32') {
+    const systemRoot = process.env.SystemRoot ?? 'C:\\Windows';
+    const tar = path.join(systemRoot, 'System32', 'tar.exe');
+    await execFileAsync(tar, ['-xzf', tgzPath, '-C', destination], {
+      encoding: 'utf8',
+      windowsHide: true,
+    });
+    return;
+  }
+  await execFileAsync('tar', ['-xzf', tgzPath, '-C', destination], {
+    encoding: 'utf8',
+  });
 }
 
 test.after(async () => {
@@ -367,6 +397,47 @@ Excluded:
 
 Stop on undefined behavior.
 
+## Handoff Evidence
+
+### Human Summary
+
+- Response language: en
+- Outcome summary: This resolved fixture is ready for dispatch and has no open decisions.
+- Changes made: Added every required planning and handoff field to the fixture.
+- Verification summary: The grill validates the complete ready-state contract.
+- Unverified or inferred: none - this summary claims only the current planning state.
+- Remaining work: Dispatch, implementation, review, and integration remain pending.
+- Next gate: independent-review
+
+### Machine Evidence
+
+- Work classification: pending
+- Initial evidence command: pending
+- Initial evidence result: pending
+- Initial evidence: pending
+- Failure oracle: pending
+- Head commit: pending
+- Verification command: pending
+- Verification result: pending
+- Verified commit: pending
+- Acceptance criteria: pending
+- Scope command: pending
+- Scope result: pending
+- Review status: pending
+- Reviewer: pending
+- Reviewed commit: pending
+- Review verification command: pending
+- Review verification result: pending
+- Review verified commit: pending
+- Findings: pending
+- Residual risks: pending
+- Merge authorized by: pending
+- Merge status: pending
+- Merged commit: pending
+- Integrated verification command: pending
+- Integrated verification result: pending
+- Integrated verified commit: pending
+
 ## Definition of Done
 
 - [ ] Acceptance criteria demonstrated.
@@ -505,21 +576,27 @@ test('AC3: ambiguous init fails without partial writes', async () => {
   const repoDir = await createFixture();
 
   await assert.rejects(
-    execFileAsync(process.execPath, [
-      path.join(repoDir, 'nonexistent'),
-      'init',
-      '--cwd',
-      repoDir,
-    ]),
+    execFileAsync(
+      process.execPath,
+      [CLI_PATH, 'init', '--cwd', repoDir],
+      { encoding: 'utf8' },
+    ),
+    (error) => {
+      assert.match(
+        error.stderr || error.stdout || '',
+        /Could not infer base branch and verify command safely/,
+      );
+      assert.match(
+        error.stderr || error.stdout || '',
+        /--base-branch <branch> and --verify-command <command>/,
+      );
+      return true;
+    },
   );
 
-  await assert.rejects(
-    async () => {
-      const agentsPath = path.join(repoDir, 'AGENTS.md');
-      await access(agentsPath);
-    },
-    /ENOENT/,
-  );
+  for (const candidate of ['AGENTS.md', '.agentic', 'docs']) {
+    await assert.rejects(access(path.join(repoDir, candidate)), /ENOENT/);
+  }
 
   const agentsPath = path.join(repoDir, 'AGENTS.md');
   await writeFile(agentsPath, 'existing content\n', 'utf8');
@@ -529,16 +606,20 @@ test('AC3: ambiguous init fails without partial writes', async () => {
   await writeFile(workflowPath, 'original: data\n', 'utf8');
 
   await assert.rejects(
-    execFileAsync(process.execPath, [
-      'bin/agentic-workflow.js',
-      'init',
-      '--cwd',
-      repoDir,
-      '--base-branch',
-      'main',
-      '--verify-command',
-      'npm test',
-    ]),
+    execFileAsync(
+      process.execPath,
+      [
+        CLI_PATH,
+        'init',
+        '--cwd',
+        repoDir,
+        '--base-branch',
+        'main',
+        '--verify-command',
+        'npm test',
+      ],
+      { encoding: 'utf8' },
+    ),
     (error) => {
       assert.match(
         error.stderr || error.stdout || '',
@@ -593,9 +674,15 @@ test('AC8-AC9: public docs match observable behavior', async () => {
   assert.match(mvp, /failures are actionable/);
   assert.match(mvp, /npm run verify[\s`]*passes/);
 
-  assert.doesNotMatch(readme, /Knowledge Hub.*copied/);
   assert.match(readme, /Knowledge Hub/);
-  assert.doesNotMatch(mvp, /native hooks.*required/);
+  assert.match(
+    readme,
+    /No text-only framework can guarantee that every model remembers every instruction/i,
+  );
+  assert.match(
+    mvp,
+    /Native hooks improve fidelity later; they are not required/i,
+  );
 });
 
 test('AC7: package contents contain no machine-specific paths, credentials, or Knowledge Hub', async () => {
@@ -626,83 +713,39 @@ test('AC7: package contents contain no machine-specific paths, credentials, or K
   });
   const realPacks = JSON.parse(packResultReal.stdout);
   const tgzPath = path.join(PROJECT_ROOT, realPacks[0].filename);
+  const extractDir = await createFixture();
+  await extractTarball(tgzPath, extractDir);
+  const packageRoot = path.join(extractDir, 'package');
+  const payloadFiles = await readTree(packageRoot);
+  const payloadPaths = payloadFiles.map((file) => file.path);
+  const payload = payloadFiles
+    .map((file) => `FILE:${file.path}\n${file.content}`)
+    .join('\n');
 
-  let tarList = '';
-  let tarOk = false;
-  try {
-    if (process.platform === 'win32') {
-      const cmdProc = process.env.ComSpec ?? 'cmd.exe';
-      const tarResult = await execFileAsync(cmdProc, [
-        '/d',
-        '/c',
-        'tar',
-        '-tzf',
-        tgzPath,
-      ], { encoding: 'utf8', windowsHide: true });
-      tarList = tarResult.stdout;
-      tarOk = tarResult.stderr === '' || !tarResult.stderr.includes('Error');
-    } else {
-      const tarResult = await execFileAsync('tar', ['-tzf', tgzPath], {
-        encoding: 'utf8',
-      });
-      tarList = tarResult.stdout;
-      tarOk = true;
-    }
-  } catch {
-    tarOk = false;
-  }
+  assert.ok(payloadPaths.includes('README.md'));
+  assert.ok(payloadPaths.includes('CHANGELOG.md'));
+  assert.ok(payloadPaths.includes('LICENSE'));
+  assert.ok(payloadPaths.includes('docs/MVP.md'));
+  assert.ok(payloadPaths.includes('templates/AGENTS.md.template'));
+  assert.ok(payloadPaths.includes('templates/task-packet.md.template'));
+  assert.ok(payloadPaths.includes('schema/workflow.schema.json'));
+  assert.ok(payloadPaths.every((file) => !file.startsWith('test/')));
+  assert.ok(
+    payloadPaths.every(
+      (file) =>
+        !file.startsWith('00-agentic-engineering/') &&
+        !file.startsWith('docs/knowledge-hub/'),
+    ),
+  );
 
-  if (tarOk && tarList) {
-    assert.doesNotMatch(tarList, /api[_-]?key/i);
-    assert.doesNotMatch(tarList, /access[_-]?token/i);
-    assert.doesNotMatch(tarList, /sk-/);
-    assert.doesNotMatch(tarList, /BEGIN.*PRIVATE KEY/);
-
-    assert.doesNotMatch(tarList, /C:\\/i);
-    assert.doesNotMatch(tarList, /\\Users\\/i);
-    assert.doesNotMatch(tarList, /\/home\//);
-    assert.doesNotMatch(tarList, /\/Users\//);
-    assert.doesNotMatch(tarList, /knowledge.hub/i);
-
-    assert.match(tarList, /AGENTS.md/);
-    assert.match(tarList, /workflow.yaml/);
-    assert.match(tarList, /orchestration-board.md/);
-    assert.match(tarList, /TASK.template.md/);
-    assert.match(tarList, /workflow.schema.json/);
-    assert.match(tarList, /CHANGELOG.md/);
-    assert.match(tarList, /LICENSE/);
-    assert.match(tarList, /README.md/);
-    assert.match(tarList, /MVP.md/);
-    assert.match(tarList, /package.json/);
-  } else {
-    const dryRunResult = await runNpm(['pack', '--dry-run', '--json'], {
-      cwd: PROJECT_ROOT,
-    });
-    const dryRunData = JSON.parse(dryRunResult.stdout);
-    const entry = Array.isArray(dryRunData) ? dryRunData[0] : dryRunData;
-    const dryRunFiles = (entry.files ?? []).map((f) =>
-      typeof f === 'string' ? f : f.path,
-    );
-    const dryRunStr = JSON.stringify(entry);
-    assert.doesNotMatch(dryRunStr, /knowledge.hub/i);
-    assert.doesNotMatch(dryRunStr, /\btest\//);
-    assert.ok(
-      dryRunFiles.some((f) => f && f.includes('AGENTS.md')),
-      'AGENTS.md included in pack',
-    );
-    assert.ok(
-      dryRunFiles.some((f) => f && f.includes('CHANGELOG.md')),
-    );
-    assert.ok(
-      dryRunFiles.some((f) => f && f.includes('LICENSE')),
-    );
-    assert.ok(
-      dryRunFiles.some((f) => f && f.includes('README.md')),
-    );
-    assert.ok(
-      dryRunFiles.some((f) => f && f.includes('MVP.md')),
-    );
-  }
+  assert.doesNotMatch(payload, /-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/u);
+  assert.doesNotMatch(payload, /\bAKIA[0-9A-Z]{16}\b/u);
+  assert.doesNotMatch(payload, /\bgh[pousr]_[A-Za-z0-9]{20,}\b/u);
+  assert.doesNotMatch(payload, /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/u);
+  assert.doesNotMatch(payload, /\bsk-[A-Za-z0-9_-]{16,}\b/u);
+  assert.doesNotMatch(payload, /[A-Z]:\\Users\\/iu);
+  assert.doesNotMatch(payload, /\/home\/[^/\s]+/u);
+  assert.doesNotMatch(payload, /\/Users\/[^/\s]+/u);
 
   await rm(tgzPath, { force: true });
 });
