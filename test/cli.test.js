@@ -46,6 +46,162 @@ async function initFixture(fixture, extraArgs = []) {
   ]);
 }
 
+async function addBoardRow(fixture, row) {
+  const boardPath = path.join(
+    fixture,
+    'docs',
+    'implementation',
+    'orchestration-board.md',
+  );
+  const lines = (await readFile(boardPath, 'utf8')).split(/\r?\n/u);
+  const headerIndex = lines.findIndex((line) => /^\| ID \|/u.test(line));
+  lines.splice(headerIndex + 2, 0, row);
+  await writeFile(boardPath, lines.join('\n'), 'utf8');
+}
+
+function reviewedPacket({
+  base,
+  head,
+  id,
+  reviewer,
+  status = 'reviewed',
+}) {
+  const approved = status === 'reviewed';
+  return `# Task Packet: ${id} - Review integrity
+
+## Metadata
+
+- Status: ${status}
+- Base branch: \`trunk\`
+- Base commit: ${base}
+- Worker branch: ${id}-review-integrity
+- Worktree: ../worktrees/${id}-review-integrity
+- Dependencies: none
+
+## Mission
+
+Prove review identity and Git ancestry constraints.
+
+## Scope
+
+Included:
+
+- Review integrity evidence.
+
+Excluded:
+
+- Product behavior changes.
+
+## Ownership
+
+- Write-set: \`test/\`
+- Read-set: \`src/\`
+- Forbidden-set: \`docs/archive/\`
+- Exclusive resources: none
+
+## Context Route
+
+### Required
+
+- \`AGENTS.md\`
+
+### On demand
+
+- none
+
+### Discovery
+
+- \`Review integrity\`
+
+### Do not preload
+
+- \`docs/archive/\`
+
+## Decisions
+
+- Decision: review one exact descendant of the dispatch base.
+  - Evidence: unrelated commits cannot represent dispatched work.
+
+## Open Questions
+
+- none
+
+## Assumptions
+
+- Assumption: Git ancestry identifies the dispatched change lineage.
+  - Evidence: base and head are immutable commits in the fixture.
+
+## Documentation Impact
+
+- Update: \`AGENTS.md\`
+- Reason: review authority and lineage are workflow behavior.
+
+## Acceptance Criteria
+
+1. Invalid review identity or ancestry is rejected.
+
+## Test Map
+
+| Criterion | Test | Expected red | Expected green |
+|---|---|---|---|
+| AC1 | check fixture | invalid review passes | invalid review is rejected |
+
+## Plan
+
+1. Record review evidence.
+2. Run the workflow check.
+
+## Stop Conditions
+
+Stop if Git evidence is unavailable.
+
+## Handoff Evidence
+
+### Human Summary
+
+- Response language: en
+- Outcome summary: The fixture records one exact review target for validation.
+- Changes made: Added review identity and Git lineage evidence to the Task Packet.
+- Verification summary: The workflow check evaluates reviewer separation and ancestry.
+- Unverified or inferred: none - the fixture uses repository commits as evidence.
+- Remaining work: The next authority depends on the current workflow state.
+- Next gate: ${approved ? 'human-merge' : 'independent-review'}
+
+### Machine Evidence
+
+- Work classification: hardening
+- Initial evidence command: \`npm test\`
+- Initial evidence result: passed-characterization
+- Initial evidence: existing workflow validation completed before this fixture
+- Failure oracle: invalid reviewer identity or unrelated head must fail check
+- Head commit: ${head}
+- Verification command: \`npm run verify\`
+- Verification result: passed
+- Verified commit: ${head}
+- Acceptance criteria: AC1: workflow check evaluates exact review integrity
+- Scope command: \`git diff --name-only ${base}...${head}\`
+- Scope result: passed
+- Review status: ${approved ? 'approved' : 'pending'}
+- Reviewer: ${approved ? reviewer : 'pending'}
+- Reviewed commit: ${approved ? head : 'pending'}
+- Review verification command: ${approved ? '`npm run verify`' : 'pending'}
+- Review verification result: ${approved ? 'passed' : 'pending'}
+- Review verified commit: ${approved ? head : 'pending'}
+- Findings: ${approved ? 'none' : 'pending'}
+- Residual risks: ${approved ? 'none' : 'pending'}
+- Merge authorized by: pending
+- Merge status: ${approved ? 'pending human gate' : 'pending'}
+- Merged commit: pending
+- Integrated verification command: pending
+- Integrated verification result: pending
+- Integrated verified commit: pending
+
+## Definition of Done
+
+- [x] Acceptance criteria demonstrated.
+`;
+}
+
 test.after(async () => {
   await Promise.all(
     fixtures.map((fixture) => rm(fixture, { force: true, recursive: true })),
@@ -87,6 +243,36 @@ test('init creates the portable workflow contract with configured commands', asy
   assert.match(workflow, /verify: "npm test"/);
   assert.match(board, /# Orchestration Board/);
   assert.match(tasks, /# Task Packets/);
+  assert.match(agents, /Workers may report evidence, but cannot approve their own work/);
+  assert.match(agents, /Characterization or hardening work may begin with passing tests/);
+  assert.match(tasks, /planned.*ready.*active.*review.*reviewed.*done/s);
+  assert.match(tasks, /A command failing for the wrong reason is not evidence/);
+  assert.match(
+    await readFile(
+      path.join(
+        fixture,
+        'docs',
+        'implementation',
+        'tasks',
+        'TASK.template.md',
+      ),
+      'utf8',
+    ),
+    /## Handoff Evidence/,
+  );
+  assert.match(
+    await readFile(
+      path.join(
+        fixture,
+        'docs',
+        'implementation',
+        'tasks',
+        'TASK.template.md',
+      ),
+      'utf8',
+    ),
+    /Response language: pending[\s\S]*Unverified or inferred: pending[\s\S]*Initial evidence result: pending[\s\S]*Review verification command: pending[\s\S]*Merge authorized by: pending/,
+  );
   assert.match(
     await readFile(
       path.join(fixture, '.agentic', 'learnings', 'README.md'),
@@ -610,6 +796,47 @@ Excluded:
 
 Stop on scope expansion.
 
+## Handoff Evidence
+
+### Human Summary
+
+- Response language: en
+- Outcome summary: Implementation has not started; this packet is ready for dispatch.
+- Changes made: No product files changed because ready is a pre-execution state.
+- Verification summary: The grill validates that planning decisions are explicit.
+- Unverified or inferred: none - this summary claims only the current planning state.
+- Remaining work: Dispatch, implementation, independent review, and integration remain.
+- Next gate: independent-review
+
+### Machine Evidence
+
+- Work classification: pending
+- Initial evidence command: pending
+- Initial evidence result: pending
+- Initial evidence: pending
+- Failure oracle: pending
+- Head commit: pending
+- Verification command: pending
+- Verification result: pending
+- Verified commit: pending
+- Acceptance criteria: pending
+- Scope command: pending
+- Scope result: pending
+- Review status: pending
+- Reviewer: pending
+- Reviewed commit: pending
+- Review verification command: pending
+- Review verification result: pending
+- Review verified commit: pending
+- Findings: pending
+- Residual risks: pending
+- Merge authorized by: pending
+- Merge status: pending
+- Merged commit: pending
+- Integrated verification command: pending
+- Integrated verification result: pending
+- Integrated verified commit: pending
+
 ## Definition of Done
 
 - [ ] Acceptance criteria demonstrated.
@@ -687,6 +914,313 @@ TBD
   );
 });
 
+test('grill blocks reviewed tasks without exact handoff evidence', async () => {
+  const fixture = await createFixture();
+  await initFixture(fixture);
+  const taskPath = path.join(
+    fixture,
+    'docs',
+    'implementation',
+    'tasks',
+    'TASK-REVIEWED.md',
+  );
+  await writeFile(
+    taskPath,
+    `# Task Packet: TASK-REVIEWED - Example
+
+## Metadata
+
+- Status: reviewed
+- Base branch: \`trunk\`
+- Base commit: pending
+- Worker branch:
+- Worktree:
+- Dependencies: none
+
+## Mission
+
+Prove reviewed work cannot be declared from a summary alone.
+
+## Scope
+
+Included:
+
+- Review evidence.
+
+Excluded:
+
+- Product changes.
+
+## Ownership
+
+- Write-set: \`test/\`
+- Read-set: \`src/\`
+- Forbidden-set: \`docs/archive/\`
+- Exclusive resources: none
+
+## Context Route
+
+### Required
+
+- \`AGENTS.md\`
+
+### On demand
+
+- none
+
+### Discovery
+
+- \`Review evidence\`
+
+### Do not preload
+
+- \`docs/archive/\`
+
+## Decisions
+
+- Decision: require exact reviewed commits.
+  - Evidence: summaries can be stale or unsupported.
+
+## Open Questions
+
+- none
+
+## Assumptions
+
+- Assumption: Git commits identify immutable review targets.
+  - Evidence: the project requires head-SHA review.
+
+## Documentation Impact
+
+- Update: \`AGENTS.md\`
+- Reason: completion claims are workflow behavior.
+
+## Acceptance Criteria
+
+1. Reviewed status requires durable evidence.
+
+## Test Map
+
+| Criterion | Test | Expected red | Expected green |
+|---|---|---|---|
+| AC1 | grill | unsupported review passes | unsupported review blocks |
+
+## Plan
+
+1. Add the gate.
+2. Run verification.
+
+## Stop Conditions
+
+Stop if review evidence is unavailable.
+
+## Definition of Done
+
+- [ ] Acceptance criteria demonstrated.
+
+## Handoff Evidence
+
+- Work classification: pending
+- Initial evidence: pending
+- Failure oracle: pending
+- Head commit: pending
+- Verification command: pending
+- Verification result: pending
+- Verified commit: pending
+- Acceptance criteria: pending
+- Scope result: pending
+- Review status: approved
+- Reviewer: pending
+- Reviewed commit: pending
+- Findings: pending
+- Residual risks: pending
+- Merge status: pending
+- Merged commit: pending
+- Integrated verification result: pending
+- Integrated verified commit: pending
+`,
+    'utf8',
+  );
+
+  await assert.rejects(
+    runCli([
+      'grill',
+      '--cwd',
+      fixture,
+      '--task',
+      'docs/implementation/tasks/TASK-REVIEWED.md',
+    ]),
+    (error) => {
+      assert.match(error.stdout, /dispatch_evidence_missing/);
+      assert.match(error.stdout, /handoff_evidence_incomplete/);
+      assert.match(error.stdout, /review_evidence_incomplete/);
+      return true;
+    },
+  );
+});
+
+test('grill accepts reviewed tasks with verified exact-SHA evidence', async () => {
+  const fixture = await createFixture();
+  await initFixture(fixture);
+  const taskPath = path.join(
+    fixture,
+    'docs',
+    'implementation',
+    'tasks',
+    'TASK-REVIEWED.md',
+  );
+  const head = '0123456789abcdef0123456789abcdef01234567';
+  const base = 'fedcba9876543210fedcba9876543210fedcba98';
+  await writeFile(
+    taskPath,
+    `# Task Packet: TASK-REVIEWED - Example
+
+## Metadata
+
+- Status: reviewed
+- Base branch: \`trunk\`
+- Base commit: ${base}
+- Worker branch: TASK-REVIEWED-example
+- Worktree: ../worktrees/TASK-REVIEWED-example
+- Dependencies: none
+
+## Mission
+
+Record independently verified handoff evidence.
+
+## Scope
+
+Included:
+
+- Review evidence.
+
+Excluded:
+
+- Product changes.
+
+## Ownership
+
+- Write-set: \`test/\`
+- Read-set: \`src/\`
+- Forbidden-set: \`docs/archive/\`
+- Exclusive resources: none
+
+## Context Route
+
+### Required
+
+- \`AGENTS.md\`
+
+### On demand
+
+- none
+
+### Discovery
+
+- \`Review evidence\`
+
+### Do not preload
+
+- \`docs/archive/\`
+
+## Decisions
+
+- Decision: require exact reviewed commits.
+  - Evidence: immutable review targets prevent stale approval.
+
+## Open Questions
+
+- none
+
+## Assumptions
+
+- Assumption: the reviewer ran the configured verification.
+  - Evidence: the handoff records the command and result.
+
+## Documentation Impact
+
+- Update: \`AGENTS.md\`
+- Reason: completion claims are workflow behavior.
+
+## Acceptance Criteria
+
+1. Reviewed status requires durable evidence.
+
+## Test Map
+
+| Criterion | Test | Expected red | Expected green |
+|---|---|---|---|
+| AC1 | grill | unsupported review passes | reviewed evidence passes |
+
+## Plan
+
+1. Add the gate.
+2. Run verification.
+
+## Stop Conditions
+
+Stop if review evidence is unavailable.
+
+## Definition of Done
+
+- [x] Acceptance criteria demonstrated.
+
+## Handoff Evidence
+
+### Human Summary
+
+- Response language: en
+- Outcome summary: Reviewed tasks now require independently verified exact-SHA evidence.
+- Changes made: Added one complete reviewed-state fixture for the grill contract.
+- Verification summary: The grill accepts the packet only when every required field is valid.
+- Unverified or inferred: none - every material claim is covered by this grill fixture.
+- Remaining work: The human merge gate remains pending and no integration is claimed.
+- Next gate: human-merge
+
+### Machine Evidence
+
+- Work classification: hardening
+- Initial evidence command: \`npm test\`
+- Initial evidence result: passed-characterization
+- Initial evidence: passing characterization baseline before adding the durable gate
+- Failure oracle: removing exact-SHA evidence makes the grill reject reviewed status
+- Head commit: ${head}
+- Verification command: \`npm run verify\`
+- Verification result: passed
+- Verified commit: ${head}
+- Acceptance criteria: AC1: exact-SHA grill verification passes this packet
+- Scope command: \`git diff --name-only ${base}...${head}\`
+- Scope result: passed
+- Review status: approved
+- Reviewer: independent-reviewer
+- Reviewed commit: ${head}
+- Review verification command: \`npm run verify\`
+- Review verification result: passed
+- Review verified commit: ${head}
+- Findings: none
+- Residual risks: none
+- Merge authorized by: pending
+- Merge status: pending human gate
+- Merged commit: pending
+- Integrated verification command: pending
+- Integrated verification result: pending
+- Integrated verified commit: pending
+`,
+    'utf8',
+  );
+
+  const { stdout } = await runCli([
+    'grill',
+    '--cwd',
+    fixture,
+    '--task',
+    'docs/implementation/tasks/TASK-REVIEWED.md',
+  ]);
+
+  assert.match(stdout, /Grill gate passed/);
+  assert.match(stdout, /0 blockers/);
+});
+
 test('check applies the grill gate to ready task packets', async () => {
   const fixture = await createFixture();
   await initFixture(fixture);
@@ -718,6 +1252,160 @@ TBD
   });
 });
 
+test('check rejects orchestration-board state that contradicts its Task Packet', async () => {
+  const fixture = await createFixture();
+  await initFixture(fixture);
+  await writeFile(
+    path.join(
+      fixture,
+      'docs',
+      'implementation',
+      'tasks',
+      'TASK-016.md',
+    ),
+    `# Task Packet: TASK-016 - State consistency
+
+## Metadata
+
+- Status: planned
+`,
+    'utf8',
+  );
+  await addBoardRow(
+    fixture,
+    '| TASK-016 | State consistency | none | ready | unassigned | - | - | docs | - | - |',
+  );
+
+  await assert.rejects(runCli(['check', '--cwd', fixture]), (error) => {
+    assert.match(error.stdout, /task_state_mismatch/);
+    assert.match(error.stdout, /TASK-016/);
+    return true;
+  });
+});
+
+test('check rejects dispatch commits that do not exist in Git', async () => {
+  const fixture = await createFixture();
+  await initFixture(fixture);
+  const missingCommit = '0123456789abcdef0123456789abcdef01234567';
+  await writeFile(
+    path.join(
+      fixture,
+      'docs',
+      'implementation',
+      'tasks',
+      'TASK-017.md',
+    ),
+    `# Task Packet: TASK-017 - Missing dispatch commit
+
+## Metadata
+
+- Status: active
+- Base branch: \`trunk\`
+- Base commit: ${missingCommit}
+- Worker branch: TASK-017-missing-dispatch
+- Worktree: ../worktrees/TASK-017-missing-dispatch
+- Dependencies: none
+
+## Mission
+
+Reject dispatch metadata that cannot be verified.
+`,
+    'utf8',
+  );
+  await addBoardRow(
+    fixture,
+    `| TASK-017 | Missing dispatch commit | none | active | worker-1 | TASK-017-missing-dispatch | ../worktrees/TASK-017-missing-dispatch | test | ${missingCommit} | - |`,
+  );
+
+  await assert.rejects(runCli(['check', '--cwd', fixture]), (error) => {
+    assert.match(error.stdout, /task_base_commit_missing/);
+    assert.match(error.stdout, /TASK-017/);
+    return true;
+  });
+});
+
+test('check rejects self-review even when the exact head is approved', async () => {
+  const fixture = await createFixture();
+  await runGit(['init', '-b', 'trunk'], fixture);
+  await runGit(['config', 'user.email', 'agent@example.test'], fixture);
+  await runGit(['config', 'user.name', 'Agent Test'], fixture);
+  await writeFile(path.join(fixture, 'base.txt'), 'base\n', 'utf8');
+  await runGit(['add', 'base.txt'], fixture);
+  await runGit(['commit', '-m', 'base'], fixture);
+  const base = (await runGit(['rev-parse', 'HEAD'], fixture)).stdout.trim();
+  await writeFile(path.join(fixture, 'head.txt'), 'head\n', 'utf8');
+  await runGit(['add', 'head.txt'], fixture);
+  await runGit(['commit', '-m', 'head'], fixture);
+  const head = (await runGit(['rev-parse', 'HEAD'], fixture)).stdout.trim();
+  await initFixture(fixture);
+  const id = 'TASK-018';
+  await writeFile(
+    path.join(
+      fixture,
+      'docs',
+      'implementation',
+      'tasks',
+      `${id}.md`,
+    ),
+    reviewedPacket({ base, head, id, reviewer: 'worker-1' }),
+    'utf8',
+  );
+  await addBoardRow(
+    fixture,
+    `| ${id} | Review integrity | none | reviewed | worker-1 | ${id}-review-integrity | ../worktrees/${id}-review-integrity | test | ${base} | ${head} |`,
+  );
+
+  await assert.rejects(runCli(['check', '--cwd', fixture]), (error) => {
+    assert.match(error.stdout, /task_self_review/);
+    assert.match(error.stdout, new RegExp(id));
+    return true;
+  });
+});
+
+test('check rejects a review head outside the dispatch base ancestry', async () => {
+  const fixture = await createFixture();
+  await runGit(['init', '-b', 'trunk'], fixture);
+  await runGit(['config', 'user.email', 'agent@example.test'], fixture);
+  await runGit(['config', 'user.name', 'Agent Test'], fixture);
+  await writeFile(path.join(fixture, 'base.txt'), 'base\n', 'utf8');
+  await runGit(['add', 'base.txt'], fixture);
+  await runGit(['commit', '-m', 'base'], fixture);
+  const base = (await runGit(['rev-parse', 'HEAD'], fixture)).stdout.trim();
+  const emptyTree = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+  const head = (
+    await runGit(['commit-tree', emptyTree, '-m', 'unrelated'], fixture)
+  ).stdout.trim();
+  await initFixture(fixture);
+  const id = 'TASK-019';
+  await writeFile(
+    path.join(
+      fixture,
+      'docs',
+      'implementation',
+      'tasks',
+      `${id}.md`,
+    ),
+    reviewedPacket({
+      base,
+      head,
+      id,
+      reviewer: 'reviewer-1',
+      status: 'review',
+    }),
+    'utf8',
+  );
+  await addBoardRow(
+    fixture,
+    `| ${id} | Review integrity | none | review | worker-1 | ${id}-review-integrity | ../worktrees/${id}-review-integrity | test | ${base} | ${head} |`,
+  );
+
+  await assert.rejects(runCli(['check', '--cwd', fixture]), (error) => {
+    assert.match(error.stdout, /task_head_not_based_on_dispatch/);
+    assert.match(error.stdout, new RegExp(id));
+    return true;
+  });
+});
+
 test('check warns when always-on or ready task context exceeds recommended budgets', async () => {
   const fixture = await createFixture();
   await initFixture(fixture);
@@ -743,6 +1431,10 @@ test('check warns when always-on or ready task context exceeds recommended budge
 ${'Planned context. '.repeat(5000)}
 `,
     'utf8',
+  );
+  await addBoardRow(
+    fixture,
+    '| TASK-006 | Planned context | none | planned | unassigned | - | - | docs | - | - |',
   );
 
   const { stdout } = await runCli(['check', '--cwd', fixture]);
@@ -874,6 +1566,8 @@ test('brief reanchors the role, task route, required gates, and pending learning
   assert.match(stdout, /Re-anchor brief/);
   assert.match(stdout, /Pending learning proposals: 1/);
   assert.match(stdout, /Run grill before execution/);
+  assert.match(stdout, /Treat role reports as claims/);
+  assert.match(stdout, /Workers cannot self-approve/);
   assert.match(stdout, /Review documentation impact/);
   assert.match(stdout, /Load only the context route/);
   assert.ok(stdout.length < 5000);

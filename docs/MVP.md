@@ -24,6 +24,8 @@ prove the workflow.
 - progressive context routing and byte budgets;
 - Task Packet and orchestration-board templates;
 - the universal `AGENTS.md` fallback for any agent CLI;
+- exact-SHA execution, independent-review, human authorization, ancestry, and
+  integrated-completion evidence;
 - package installation, public API, tests, and release documentation;
 - one end-to-end dogfood journey from clean repository to reviewed handoff;
 - explicit reporting of capabilities that remain advisory without native hooks.

@@ -85,14 +85,58 @@ If no documentation changes:
 
 ## Plan
 
-1. Add one failing behavior test.
-2. Add the minimum implementation.
-3. Run `npm run verify`.
+1. Classify the work and record the required initial evidence.
+2. For behavior changes or bug fixes, prove the intended failure. For
+   characterization, hardening, documentation, or research, record the applicable
+   passing baseline or deterministic review procedure.
+3. Add the minimum scoped implementation or artifact change.
+4. Run `npm run verify` on the exact handoff head.
 
 ## Stop Conditions
 
 Stop if scope must expand, ownership overlaps, dependencies are stale, or a gate
 must be weakened.
+
+## Handoff Evidence
+
+### Human Summary
+
+- Response language: pending
+- Outcome summary: pending
+- Changes made: pending
+- Verification summary: pending
+- Unverified or inferred: pending
+- Remaining work: pending
+- Next gate: pending
+
+### Machine Evidence
+
+- Work classification: pending
+- Initial evidence command: pending
+- Initial evidence result: pending
+- Initial evidence: pending
+- Failure oracle: pending
+- Head commit: pending
+- Verification command: pending
+- Verification result: pending
+- Verified commit: pending
+- Acceptance criteria: pending
+- Scope command: pending
+- Scope result: pending
+- Review status: pending
+- Reviewer: pending
+- Reviewed commit: pending
+- Review verification command: pending
+- Review verification result: pending
+- Review verified commit: pending
+- Findings: pending
+- Residual risks: pending
+- Merge authorized by: pending
+- Merge status: pending
+- Merged commit: pending
+- Integrated verification command: pending
+- Integrated verification result: pending
+- Integrated verified commit: pending
 
 ## Definition of Done
 

@@ -3,6 +3,10 @@
 This board is the durable source of workflow state. `docs/MVP.md` defines the current
 release boundary. Post-MVP rows preserve sequencing but do not block the MVP.
 
+Allowed states are `deferred`, `planned`, `ready`, `active`, `review`, `reviewed`, and
+`done`. Reports from agents do not change state by themselves; the orchestrator
+records transitions only after checking the required Task Packet evidence.
+
 ## Tasks
 
 | ID | Phase | Kind | Objective | Depends on | State | Owner | Branch | Worktree | Write-set | Base commit | Head commit |

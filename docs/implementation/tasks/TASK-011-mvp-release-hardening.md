@@ -120,7 +120,8 @@ Excluded:
 
 ## Plan
 
-1. Add the failing packed-artifact end-to-end test.
+1. Add the packed-artifact end-to-end characterization test and record whether the
+   existing baseline passes or fails for the intended reason.
 2. Add failure and privacy fixtures.
 3. Fix only observed MVP defects in the owning modules.
 4. Update release documentation.
@@ -130,6 +131,47 @@ Excluded:
 
 Stop if a fix requires a post-MVP capability, changes a public contract without a
 separate decision, expands persistent state, or needs external credentials.
+
+## Handoff Evidence
+
+### Human Summary
+
+- Response language: pending
+- Outcome summary: pending
+- Changes made: pending
+- Verification summary: pending
+- Unverified or inferred: pending
+- Remaining work: pending
+- Next gate: pending
+
+### Machine Evidence
+
+- Work classification: pending
+- Initial evidence command: pending
+- Initial evidence result: pending
+- Initial evidence: pending
+- Failure oracle: pending
+- Head commit: pending
+- Verification command: pending
+- Verification result: pending
+- Verified commit: pending
+- Acceptance criteria: pending
+- Scope command: pending
+- Scope result: pending
+- Review status: pending
+- Reviewer: pending
+- Reviewed commit: pending
+- Review verification command: pending
+- Review verification result: pending
+- Review verified commit: pending
+- Findings: pending
+- Residual risks: pending
+- Merge authorized by: pending
+- Merge status: pending
+- Merged commit: pending
+- Integrated verification command: pending
+- Integrated verification result: pending
+- Integrated verified commit: pending
 
 ## Definition of Done
 

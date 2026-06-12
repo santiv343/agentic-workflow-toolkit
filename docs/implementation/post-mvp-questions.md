@@ -18,6 +18,7 @@ The owning task must resolve its questions before moving from `planned` to `read
 | PMQ-011 | remote observability | Which destinations, retention, disclosure, and cost limits are acceptable before enabling OpenTelemetry export? | TASK-010 |
 | PMQ-012 | protected sync | Which cloud or remote transport is implemented first, and what authentication, encryption, revocation, and recovery contract is required? | TASK-015 |
 | PMQ-013 | managed policy | How are organization policies distributed, authenticated, updated, and recovered without creating a mandatory hosted control plane? | future task after TASK-001 |
+| PMQ-014 | behavioral evaluation | Which normal, ambiguous, adversarial, multilingual, resume, and multi-agent scenarios form the portable effectiveness suite, and how are compliance, quality, honesty, cost, and latency scored across hosts and models? | future evaluation task |
 
 ## Resolution Rule
 

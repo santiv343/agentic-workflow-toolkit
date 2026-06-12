@@ -3,6 +3,20 @@
 This project follows Semantic Versioning for its public CLI, generated file contract,
 and programmatic API.
 
+## Unreleased
+
+- Add an explicit task state machine from planning through integrated completion.
+- Require exact-SHA dispatch, execution, review, merge, and verification evidence for
+  executable task states.
+- Reject orchestration-board and Task Packet state contradictions.
+- Distinguish red-first behavior changes from passing characterization and hardening
+  baselines.
+- Re-anchor agents with role-authority and completion-evidence invariants.
+- Require readable, language-matched, evidence-calibrated handoffs that disclose
+  unverified claims and the next human gate.
+- Register a post-MVP behavioral evaluation suite for normal, ambiguous, adversarial,
+  multilingual, and multi-agent scenarios.
+
 ## 0.4.0
 
 - Require Node.js 22.13.0 or newer as the runtime baseline.

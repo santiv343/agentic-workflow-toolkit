@@ -3,6 +3,10 @@
 This board is the durable source of workflow state. Update it when task state,
 ownership, dependencies, or reviewed commits change.
 
+Allowed states are `deferred`, `planned`, `ready`, `active`, `review`, `reviewed`, and
+`done`. Reports from agents do not change state by themselves; the orchestrator
+records transitions only after checking the required Task Packet evidence.
+
 ## Tasks
 
 | ID | Objective | Depends on | State | Owner | Branch | Worktree | Write-set | Base commit | Head commit |

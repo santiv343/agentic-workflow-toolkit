@@ -151,6 +151,49 @@ No text-only framework can guarantee that every model remembers every instructio
 every turn. The practical guarantee is layered: always-on contract, re-anchor brief,
 role permissions, deterministic gates, and CI.
 
+## Verify Completion Claims
+
+The toolkit treats agent reports as claims, not authority. Task state follows:
+
+```text
+deferred/planned -> ready -> active -> review -> reviewed -> done
+```
+
+- the orchestrator records dispatch metadata before implementation;
+- the worker hands off one exact head with verification and acceptance evidence;
+- an independent reviewer reruns verification and approves that same exact head;
+- the human merge gate authorizes integration;
+- `done` requires verification on the exact merged commit.
+
+`grill` rejects incomplete execution, review, or integration evidence. `check` also
+rejects contradictions between the orchestration board and Task Packets.
+Acceptance evidence must name every numbered criterion (`AC1`, `AC2`, ...) rather
+than stating that the task was checked in general. Each mapping uses
+`AC1: concrete evidence; AC2: concrete evidence`.
+
+Evidence semantics are explicit. Behavior changes and bug fixes require a pre-change
+failure or reproduction. Characterization, refactoring, and release hardening may
+start from a passing baseline, but must state the regression oracle they add. A
+command failing for an unrelated reason never counts as a red test.
+
+Every handoff has two layers. `Human Summary` explains the outcome, changes,
+verification, remaining work, and next gate in plain language. `Machine Evidence`
+records commands, exact commits, acceptance mappings, review, authorization, and
+integration facts. A readable report cannot replace evidence, and raw evidence cannot
+replace a readable report. The summary also records `Response language`, and the
+agent answers in the language of the latest human request. It separately records
+anything unverified or inferred so a confident tone cannot conceal an evidence gap.
+
+Tone rules are part of the contract: be direct, do not flatter or agree
+automatically, challenge unsupported premises, and never describe an inference as an
+observed result. These semantic qualities require behavioral evaluation in addition
+to deterministic field validation.
+
+The MVP validates durable records, exact Git objects, commit ancestry, role
+separation, and board/packet consistency. It does not cryptographically attest who
+ran a command. CI or a trusted orchestrator must execute the recorded commands;
+native host adapters may provide stronger attestations later.
+
 ## Learn From Corrections
 
 The agent converts a correction into a bounded JSON candidate:

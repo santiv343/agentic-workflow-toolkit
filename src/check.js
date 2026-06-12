@@ -5,13 +5,17 @@ import {
   realpath,
   stat,
 } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
 import path from 'node:path';
+import { promisify } from 'node:util';
 
 import { parseDocument } from 'yaml';
 
 import { auditTaskPacketSource, taskStatus } from './grill.js';
 import { pendingLearningPaths } from './learn.js';
+import { parseSections } from './markdown.js';
 
+const execFileAsync = promisify(execFile);
 const REQUIRED_PATHS = [
   { keys: ['authority', 'project_contract'], type: 'file' },
   { keys: ['authority', 'orchestration_board'], type: 'file' },
@@ -21,6 +25,15 @@ const REQUIRED_PATHS = [
 const MAX_BINDING_FILE_BYTES = 1024 * 1024;
 const MAX_PROJECT_CONTRACT_BYTES = 16 * 1024;
 const MAX_TASK_PACKET_BYTES = 64 * 1024;
+const ALLOWED_TASK_STATES = new Set([
+  'deferred',
+  'planned',
+  'ready',
+  'active',
+  'review',
+  'reviewed',
+  'done',
+]);
 const SECRET_PATTERNS = [
   /-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/u,
   /\bAKIA[0-9A-Z]{16}\b/u,
@@ -298,7 +311,7 @@ async function scanReadyTaskPackets(cwd, config) {
     }
     const source = await readFile(file, 'utf8');
     const status = taskStatus(source);
-    if (!['ready', 'active', 'review', 'done'].includes(status)) {
+    if (!['ready', 'active', 'review', 'reviewed', 'done'].includes(status)) {
       continue;
     }
     const findings = auditTaskPacketSource(source);
@@ -310,6 +323,309 @@ async function scanReadyTaskPackets(cwd, config) {
       });
     }
   }
+  return issues;
+}
+
+function markdownTable(source) {
+  const lines = source.split(/\r?\n/u);
+  const headerIndex = lines.findIndex(
+    (line) => /^\s*\|/u.test(line) && /\|\s*ID\s*\|/iu.test(line),
+  );
+  if (headerIndex < 0) {
+    return [];
+  }
+  const headers = lines[headerIndex]
+    .split('|')
+    .slice(1, -1)
+    .map((value) => value.trim());
+  const rows = [];
+  for (const line of lines.slice(headerIndex + 2)) {
+    if (!/^\s*\|/u.test(line)) {
+      break;
+    }
+    const values = line
+      .split('|')
+      .slice(1, -1)
+      .map((value) => value.trim().replaceAll('`', ''));
+    if (values.length !== headers.length) {
+      continue;
+    }
+    rows.push(Object.fromEntries(headers.map((header, index) => [header, values[index]])));
+  }
+  return rows;
+}
+
+function taskId(source) {
+  return source.match(
+    /^# Task Packet:\s*([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)/imu,
+  )?.[1];
+}
+
+function sectionValue(source, sectionName, label) {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  const section = parseSections(source).get(sectionName) ?? '';
+  return section
+    .match(new RegExp(`^\\s*-\\s*${escaped}:\\s*(.+?)\\s*$`, 'imu'))?.[1]
+    ?.replaceAll('`', '')
+    .trim();
+}
+
+function metadataValue(source, label) {
+  return sectionValue(source, 'Metadata', label);
+}
+
+function handoffValue(source, label) {
+  return sectionValue(source, 'Handoff Evidence', label);
+}
+
+async function gitCommitExists(cwd, commit) {
+  if (!/^[0-9a-f]{40}$/iu.test(commit ?? '')) {
+    return false;
+  }
+  try {
+    await execFileAsync('git', ['cat-file', '-e', `${commit}^{commit}`], {
+      cwd,
+      windowsHide: true,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function gitCommitIsIntegrated(cwd, commit) {
+  if (!(await gitCommitExists(cwd, commit))) {
+    return false;
+  }
+  try {
+    await execFileAsync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], {
+      cwd,
+      windowsHide: true,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function gitCommitIsAncestor(cwd, ancestor, descendant) {
+  if (
+    !(await gitCommitExists(cwd, ancestor)) ||
+    !(await gitCommitExists(cwd, descendant))
+  ) {
+    return false;
+  }
+  try {
+    await execFileAsync(
+      'git',
+      ['merge-base', '--is-ancestor', ancestor, descendant],
+      {
+        cwd,
+        windowsHide: true,
+      },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function inspectOrchestrationState(cwd, config) {
+  const boardCandidate = getValue(config, [
+    'authority',
+    'orchestration_board',
+  ]);
+  const tasksCandidate = getValue(config, ['authority', 'task_packets']);
+  if (
+    typeof boardCandidate !== 'string' ||
+    typeof tasksCandidate !== 'string'
+  ) {
+    return [];
+  }
+  const boardPath = resolveProjectPath(cwd, boardCandidate);
+  const tasksPath = resolveProjectPath(cwd, tasksCandidate);
+  if (
+    !boardPath ||
+    !tasksPath ||
+    !(await pathExists(boardPath)) ||
+    !(await pathExists(tasksPath))
+  ) {
+    return [];
+  }
+
+  const issues = [];
+  const rows = markdownTable(await readFile(boardPath, 'utf8'));
+  const rowById = new Map();
+  for (const row of rows) {
+    if (rowById.has(row.ID)) {
+      issues.push({
+        code: 'duplicate_board_task',
+        message: `${row.ID} appears more than once on the orchestration board`,
+        severity: 'error',
+      });
+    }
+    rowById.set(row.ID, row);
+    if (!ALLOWED_TASK_STATES.has(row.State?.toLowerCase())) {
+      issues.push({
+        code: 'invalid_board_state',
+        message: `${row.ID} uses unsupported board state: ${row.State || '<missing>'}`,
+        severity: 'error',
+      });
+    }
+  }
+  const files = (await collectBindingFiles(tasksPath)).filter((file) => {
+    const name = path.basename(file).toLowerCase();
+    return (
+      path.extname(file).toLowerCase() === '.md' &&
+      name !== 'readme.md' &&
+      !name.includes('template')
+    );
+  });
+
+  const packetIds = new Set();
+  for (const file of files) {
+    const source = await readFile(file, 'utf8');
+    const id = taskId(source);
+    if (!id) {
+      continue;
+    }
+    if (packetIds.has(id)) {
+      issues.push({
+        code: 'duplicate_task_packet',
+        message: `${id} is declared by more than one Task Packet`,
+        severity: 'error',
+      });
+    }
+    packetIds.add(id);
+    const row = rowById.get(id);
+    if (!row) {
+      issues.push({
+        code: 'task_missing_from_board',
+        message: `${id} has a Task Packet but no orchestration-board row`,
+        severity: 'error',
+      });
+      continue;
+    }
+
+    const status = taskStatus(source);
+    if (!ALLOWED_TASK_STATES.has(status)) {
+      issues.push({
+        code: 'invalid_task_status',
+        message: `${id} uses unsupported packet status: ${status || '<missing>'}`,
+        severity: 'error',
+      });
+    }
+    if (row.State?.toLowerCase() !== status) {
+      issues.push({
+        code: 'task_state_mismatch',
+        message: `${id} board state ${row.State || '<missing>'} does not match packet status ${status || '<missing>'}`,
+        severity: 'error',
+      });
+    }
+
+    if (['active', 'review', 'reviewed', 'done'].includes(status)) {
+      const baseCommit = metadataValue(source, 'Base commit');
+      const expected = {
+        'Base commit': baseCommit,
+        Branch: metadataValue(source, 'Worker branch'),
+        Worktree: metadataValue(source, 'Worktree'),
+      };
+      for (const [column, value] of Object.entries(expected)) {
+        if (row[column] !== value) {
+          issues.push({
+            code: 'task_dispatch_mismatch',
+            message: `${id} board ${column} does not match its Task Packet`,
+            severity: 'error',
+          });
+        }
+      }
+      if (!(await gitCommitExists(cwd, baseCommit))) {
+        issues.push({
+          code: 'task_base_commit_missing',
+          message: `${id} base commit does not exist in this repository`,
+          severity: 'error',
+        });
+      }
+      if (!row.Owner || /^(?:unassigned|-|pending)$/iu.test(row.Owner)) {
+        issues.push({
+          code: 'task_owner_missing',
+          message: `${id} is ${status} without an assigned board owner`,
+          severity: 'error',
+        });
+      }
+    }
+
+    if (['review', 'reviewed', 'done'].includes(status)) {
+      const head = handoffValue(source, 'Head commit');
+      const baseCommit = metadataValue(source, 'Base commit');
+      if (row['Head commit'] !== head) {
+        issues.push({
+          code: 'task_head_mismatch',
+          message: `${id} board head does not match its execution handoff`,
+          severity: 'error',
+        });
+      }
+      if (!(await gitCommitExists(cwd, head))) {
+        issues.push({
+          code: 'task_head_commit_missing',
+          message: `${id} handoff head does not exist in this repository`,
+          severity: 'error',
+        });
+      }
+      if (!(await gitCommitIsAncestor(cwd, baseCommit, head))) {
+        issues.push({
+          code: 'task_head_not_based_on_dispatch',
+          message: `${id} handoff head does not descend from its recorded base commit`,
+          severity: 'error',
+        });
+      }
+    }
+
+    if (['reviewed', 'done'].includes(status)) {
+      const reviewer = handoffValue(source, 'Reviewer');
+      if (
+        reviewer &&
+        row.Owner &&
+        reviewer.toLowerCase() === row.Owner.toLowerCase()
+      ) {
+        issues.push({
+          code: 'task_self_review',
+          message: `${id} reviewer must differ from the implementation owner`,
+          severity: 'error',
+        });
+      }
+    }
+
+    if (status === 'done') {
+      const head = handoffValue(source, 'Head commit');
+      const mergedCommit = handoffValue(source, 'Merged commit');
+      if (!(await gitCommitIsIntegrated(cwd, mergedCommit))) {
+        issues.push({
+          code: 'task_merge_not_integrated',
+          message: `${id} merged commit is not reachable from the checked-out HEAD`,
+          severity: 'error',
+        });
+      }
+      if (!(await gitCommitIsAncestor(cwd, head, mergedCommit))) {
+        issues.push({
+          code: 'task_reviewed_head_not_merged',
+          message: `${id} merged commit does not contain the exact reviewed head`,
+          severity: 'error',
+        });
+      }
+    }
+  }
+
+  for (const row of rows) {
+    if (row.ID && !packetIds.has(row.ID)) {
+      issues.push({
+        code: 'board_task_missing_packet',
+        message: `${row.ID} has an orchestration-board row but no Task Packet`,
+        severity: 'error',
+      });
+    }
+  }
+
   return issues;
 }
 
@@ -624,6 +940,7 @@ export async function checkWorkflow(cwd) {
   issues.push(...(await scanBindings(cwd, config)));
   issues.push(...(await inspectContextBudgets(cwd, config)));
   issues.push(...(await scanReadyTaskPackets(cwd, config)));
+  issues.push(...(await inspectOrchestrationState(cwd, config)));
   for (const learningPath of await pendingLearningPaths(cwd)) {
     issues.push({
       code: 'pending_learning',

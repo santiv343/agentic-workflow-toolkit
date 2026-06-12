@@ -408,6 +408,47 @@ a partially constructed runtime, duplicates a transport type by hand, enables
 mutating validation or remote schema resolution, guesses a payload version, or mixes
 future feature implementation into the baseline.
 
+## Handoff Evidence
+
+### Human Summary
+
+- Response language: pending
+- Outcome summary: pending
+- Changes made: pending
+- Verification summary: pending
+- Unverified or inferred: pending
+- Remaining work: pending
+- Next gate: pending
+
+### Machine Evidence
+
+- Work classification: pending
+- Initial evidence command: pending
+- Initial evidence result: pending
+- Initial evidence: pending
+- Failure oracle: pending
+- Head commit: pending
+- Verification command: pending
+- Verification result: pending
+- Verified commit: pending
+- Acceptance criteria: pending
+- Scope command: pending
+- Scope result: pending
+- Review status: pending
+- Reviewer: pending
+- Reviewed commit: pending
+- Review verification command: pending
+- Review verification result: pending
+- Review verified commit: pending
+- Findings: pending
+- Residual risks: pending
+- Merge authorized by: pending
+- Merge status: pending
+- Merged commit: pending
+- Integrated verification command: pending
+- Integrated verification result: pending
+- Integrated verified commit: pending
+
 ## Definition of Done
 
 - [ ] Epic was decomposed before dispatch.
