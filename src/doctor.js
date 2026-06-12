@@ -20,7 +20,6 @@ const TOOLS = [
   { category: 'agent-cli', command: 'gemini', name: 'gemini' },
   { category: 'agent-cli', command: 'opencode', name: 'opencode' },
   { category: 'agent-cli', command: 'pi', name: 'pi' },
-  { category: 'agent-memory', command: 'engram', name: 'engram' },
 ];
 
 function canExecute(filePath) {

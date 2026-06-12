@@ -352,15 +352,17 @@ test('doctor reports available CLIs as portable structured data', async () => {
   const report = JSON.parse(stdout);
   const node = report.tools.find((tool) => tool.name === 'node');
   const npm = report.tools.find((tool) => tool.name === 'npm');
-  const engram = report.tools.find((tool) => tool.name === 'engram');
   const pi = report.tools.find((tool) => tool.name === 'pi');
 
   assert.equal(report.platform, process.platform);
   assert.equal(node.available, true);
   assert.equal(npm.available, true);
   assert.equal(typeof node.version, 'string');
-  assert.equal(engram.category, 'agent-memory');
   assert.equal(pi.category, 'agent-cli');
+  assert.equal(
+    report.tools.some((tool) => tool.category === 'agent-memory'),
+    false,
+  );
   assert.ok(
     report.tools.every(
       (tool) =>
@@ -904,5 +906,5 @@ test('CLI exposes help and package version', async () => {
   assert.match(help.stdout, /agentic-workflow grill/);
   assert.match(help.stdout, /agentic-workflow learn/);
   assert.match(help.stdout, /agentic-workflow brief/);
-  assert.equal(version.stdout.trim(), '0.3.0');
+  assert.equal(version.stdout.trim(), '0.3.1');
 });

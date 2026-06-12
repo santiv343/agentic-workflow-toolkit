@@ -3,6 +3,11 @@
 This project follows Semantic Versioning for its public CLI, generated file contract,
 and programmatic API.
 
+## 0.3.1
+
+- Keep `doctor` provider-neutral by detecting agent hosts rather than specific memory
+  products.
+
 ## 0.3.0
 
 - Add `context` for role-specific progressive disclosure and context budgets.
@@ -14,7 +19,7 @@ and programmatic API.
 - Expand Task Packets with context routing and explicit decision records.
 - Clarify that `doctor` detects availability but does not prove binding adoption or
   behavioral conformance.
-- Detect Pi and Engram as optional agent capabilities.
+- Detect Pi as an optional agent host.
 - Keep cross-project methodology in the separate Knowledge Hub.
 
 ## 0.2.0
