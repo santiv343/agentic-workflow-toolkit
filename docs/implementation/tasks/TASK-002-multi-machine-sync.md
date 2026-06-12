@@ -73,11 +73,31 @@ Excluded:
     SQLite.
 - Decision: require future cloud transports to carry the same protocol envelopes.
   - Evidence: cloud adoption must not fork merge, policy, or memory semantics.
+- Decision: ship the initial file transport without encryption, password, recovery
+  code, or shared secret.
+  - Evidence: the approved initial UX prioritizes a simple user-managed file
+    transfer and accepts responsibility for how the file is shared.
+- Decision: label the file transport `protection: none` and state that checksums
+  detect accidental corruption but not intentional tampering.
+  - Evidence: the implementation must not claim confidentiality or authenticity it
+    does not provide.
+- Decision: use random channel and device IDs only for routing, cursors,
+  acknowledgements, and deduplication, not as credentials.
+  - Evidence: identifiers without a secret cannot authenticate a device.
+- Decision: make `sync join <file> --profile <profile>` an explicit local-consent
+  flow with a preview of profile, channel, policy, projects, classes, and devices.
+  - Evidence: a plaintext channel still requires deliberate local association.
+- Decision: provide `forget-device` as coordination cleanup, not strong revocation.
+  - Evidence: a holder of an old plaintext bundle cannot be cryptographically
+    excluded.
+- Decision: retain local outgoing changes until acknowledgement or explicit discard.
+  - Evidence: losing the transport file must not delete unsynchronized local state.
+- Decision: model encryption and authentication as optional transport capabilities
+  that a future cloud or protected-file transport may require.
+  - Evidence: adding protection later must not fork the sync protocol.
 
 ## Open Questions
 
-- How are devices enrolled, authenticated, revoked, and recovered?
-- What encryption and key-management model is required?
 - How are updates, deletes, pins, and policy changes merged?
 - What metadata may the transport observe?
 - How are costs, quotas, retries, and offline backlogs bounded?
@@ -99,6 +119,9 @@ Excluded:
 7. Work and restricted sync remain disabled unless policy explicitly enables them.
 8. Reapplying or combining file bundles does not duplicate changes.
 9. File and future cloud transports use the same versioned envelopes.
+10. Plaintext transport behavior never claims encryption, authentication, or strong
+    revocation.
+11. Losing a bundle does not remove unacknowledged local changes.
 
 ## Test Map
 
@@ -113,6 +136,8 @@ Excluded:
 | AC7 | work preset | sync starts implicitly | explicit approved policy is required |
 | AC8 | bundle replay and branching | duplicate records appear | stable IDs deduplicate and converge |
 | AC9 | file/cloud conformance | transports change semantics | both pass the same protocol suite |
+| AC10 | plaintext threat model | UI implies protected data | every surface reports `protection: none` |
+| AC11 | lost or deleted bundle | pending local changes vanish | outbox can create a replacement bundle |
 
 ## Plan
 
