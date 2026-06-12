@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic-workflow:schema:v1",
+  "title": "Agentic Workflow Configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "authority",
+    "git",
+    "workflow",
+    "roles",
+    "commands",
+    "stop_conditions"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_contract",
+        "orchestration_board",
+        "task_packets",
+        "bindings",
+        "learnings"
+      ],
+      "properties": {
+        "project_contract": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "orchestration_board": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "task_packets": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "bindings": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "learnings": {
+          "$ref": "#/$defs/relativePath"
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_branch",
+        "branch_pattern",
+        "require_isolated_worktree",
+        "allow_worker_merge",
+        "human_merge_gate"
+      ],
+      "properties": {
+        "base_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch_pattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "require_isolated_worktree": {
+          "type": "boolean"
+        },
+        "allow_worker_merge": {
+          "type": "boolean"
+        },
+        "human_merge_gate": {
+          "$ref": "#/$defs/gate"
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "human_plan_gate",
+        "integration",
+        "dependencies_ready_when",
+        "max_parallel_writers",
+        "require_disjoint_write_sets",
+        "require_head_sha_review"
+      ],
+      "properties": {
+        "human_plan_gate": {
+          "$ref": "#/$defs/gate"
+        },
+        "integration": {
+          "enum": [
+            "serial",
+            "parallel"
+          ]
+        },
+        "dependencies_ready_when": {
+          "enum": [
+            "merged",
+            "reviewed",
+            "completed"
+          ]
+        },
+        "max_parallel_writers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "require_disjoint_write_sets": {
+          "type": "boolean"
+        },
+        "require_head_sha_review": {
+          "type": "boolean"
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "orchestrator",
+        "implementer",
+        "reviewer"
+      ],
+      "properties": {
+        "orchestrator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "can_edit_product",
+            "can_delegate"
+          ],
+          "properties": {
+            "can_edit_product": {
+              "type": "boolean"
+            },
+            "can_delegate": {
+              "type": "boolean"
+            }
+          }
+        },
+        "implementer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "one_task_at_a_time",
+            "requires_task_packet"
+          ],
+          "properties": {
+            "one_task_at_a_time": {
+              "type": "boolean"
+            },
+            "requires_task_packet": {
+              "type": "boolean"
+            }
+          }
+        },
+        "reviewer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "can_edit",
+            "can_self_review"
+          ],
+          "properties": {
+            "can_edit": {
+              "type": "boolean"
+            },
+            "can_self_review": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verify",
+        "context",
+        "grill",
+        "learn",
+        "brief"
+      ],
+      "properties": {
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "brief": {
+          "type": "string",
+          "minLength": 1
+        },
+        "setup": {
+          "type": "string",
+          "minLength": 1
+        },
+        "focused_test": {
+          "type": "string",
+          "minLength": 1
+        },
+        "grill": {
+          "type": "string",
+          "minLength": 1
+        },
+        "learn": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verify": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "stop_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "gate": {
+      "enum": [
+        "required",
+        "optional"
+      ]
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "pattern": "^(?:[A-Za-z]:[\\\\/]|[\\\\/])"
+      }
+    }
+  }
+}

@@ -1,0 +1,105 @@
+# Task Packet: TASK-ID - Title
+
+## Metadata
+
+- Status: ready
+- Base branch: `main`
+- Base commit:
+- Worker branch:
+- Worktree:
+- Dependencies: none
+
+## Mission
+
+Describe the concrete problem and observable outcome.
+
+## Scope
+
+Included:
+
+- Define included work.
+
+Excluded:
+
+- Define explicit exclusions.
+
+## Ownership
+
+- Write-set:
+- Read-set:
+- Forbidden-set:
+- Exclusive resources:
+
+## Context Route
+
+Keep required context small. Load the rest only when evidence demands it.
+
+### Required
+
+- `path/to/direct-contract-or-reference`
+
+### On demand
+
+- `path/to/deeper-doc-or-directory`
+
+### Discovery
+
+- `symbol, route, schema, or relationship to locate before broad reading`
+
+### Do not preload
+
+- `archives, generated output, broad historical docs, unrelated subsystems`
+
+## Decisions
+
+- Decision: state the selected behavior or constraint.
+  - Evidence: code, test, ADR, standard, or approved human decision.
+
+## Open Questions
+
+- none
+
+## Assumptions
+
+- Assumption: state only what execution depends on.
+  - Evidence: identify the supporting source.
+
+## Documentation Impact
+
+- Update: `path/to/authoritative-doc.md`
+- Reason: explain why it changes.
+
+If no documentation changes:
+
+- none - Reason: identify the authoritative docs reviewed and why they remain correct.
+
+## Acceptance Criteria
+
+1. Define a verifiable outcome.
+
+## Test Map
+
+| Criterion | Test | Expected red | Expected green |
+|---|---|---|---|
+| AC1 | | | |
+
+## Plan
+
+1. Add one failing behavior test.
+2. Add the minimum implementation.
+3. Run `npm run verify`.
+
+## Stop Conditions
+
+Stop if scope must expand, ownership overlaps, dependencies are stale, or a gate
+must be weakened.
+
+## Definition of Done
+
+- [ ] Acceptance criteria demonstrated.
+- [ ] Verification passed.
+- [ ] Diff stayed inside the write-set.
+- [ ] Decisions and assumptions are evidence-backed.
+- [ ] Open Questions is `none`.
+- [ ] Documentation impact was completed or explicitly justified.
+- [ ] Independent review recorded the reviewed head commit.

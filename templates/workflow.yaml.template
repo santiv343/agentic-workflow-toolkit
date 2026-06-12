@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=workflow.schema.json
+version: 1
+
+authority:
+  project_contract: "AGENTS.md"
+  orchestration_board: "docs/implementation/orchestration-board.md"
+  task_packets: "docs/implementation/tasks"
+  bindings: ".agentic/bindings"
+  learnings: ".agentic/learnings"
+
+git:
+  base_branch: {{YAML_BASE_BRANCH}}
+  branch_pattern: "<task-id>-<slug>"
+  require_isolated_worktree: true
+  allow_worker_merge: false
+  human_merge_gate: "required"
+
+workflow:
+  human_plan_gate: "required"
+  integration: "serial"
+  dependencies_ready_when: "merged"
+  max_parallel_writers: 1
+  require_disjoint_write_sets: true
+  require_head_sha_review: true
+
+roles:
+  orchestrator:
+    can_edit_product: false
+    can_delegate: true
+  implementer:
+    one_task_at_a_time: true
+    requires_task_packet: true
+  reviewer:
+    can_edit: false
+    can_self_review: false
+
+commands:
+  verify: {{YAML_VERIFY_COMMAND}}
+  context: "agentic-workflow context"
+  grill: "agentic-workflow grill"
+  learn: "agentic-workflow learn"
+  brief: "agentic-workflow brief"
+
+stop_conditions:
+  - "task_packet_contradicts_code"
+  - "undeclared_dependency"
+  - "write_set_expansion"
+  - "missing_contract"
+  - "gate_weakening_required"
+  - "foreign_changes_in_worktree"

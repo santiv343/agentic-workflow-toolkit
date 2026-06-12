@@ -1,0 +1,51 @@
+{
+  "name": "agentic-workflow-toolkit",
+  "version": "0.3.0",
+  "description": "Portable project control-plane scaffolding and validation CLI",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "agentic-workflow": "bin/agentic-workflow.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "templates/",
+    "schema/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "package:check": "npm pack --dry-run",
+    "verify": "npm test && npm run package:check"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "agents",
+    "cli",
+    "orchestration",
+    "workflow"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/santiv343/agentic-workflow-toolkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/santiv343/agentic-workflow-toolkit/issues"
+  },
+  "homepage": "https://github.com/santiv343/agentic-workflow-toolkit#readme",
+  "dependencies": {
+    "yaml": "^2.9.0"
+  }
+}
