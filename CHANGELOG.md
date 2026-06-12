@@ -24,6 +24,14 @@ and programmatic API.
   profile-aware local persistence, isolated behind a toolkit-owned adapter.
 - Avoid native third-party SQLite dependencies and their platform-specific install
   lifecycle.
+- Add packed-artifact end-to-end integration test proving the complete MVP journey
+  from an installed package in a clean repository.
+- Add atomic initialization fixture verifying that conflicting managed files stop the
+  preflight before any writes.
+- Add package-content privacy inspection verifying no machine-specific paths,
+  credentials, or Knowledge Hub artifacts ship in the published tarball.
+- Add documentation assertion test verifying that README and MVP.md match the
+  observable CLI behavior.
 
 ## 0.3.1
 
