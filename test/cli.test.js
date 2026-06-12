@@ -898,6 +898,9 @@ test('check reports pending learning proposals without blocking unrelated verifi
 test('CLI exposes help and package version', async () => {
   const help = await runCli(['--help']);
   const version = await runCli(['--version']);
+  const packageMetadata = JSON.parse(
+    await readFile(path.resolve('package.json'), 'utf8'),
+  );
 
   assert.match(help.stdout, /agentic-workflow init/);
   assert.match(help.stdout, /agentic-workflow check/);
@@ -906,5 +909,6 @@ test('CLI exposes help and package version', async () => {
   assert.match(help.stdout, /agentic-workflow grill/);
   assert.match(help.stdout, /agentic-workflow learn/);
   assert.match(help.stdout, /agentic-workflow brief/);
-  assert.equal(version.stdout.trim(), '0.3.1');
+  assert.equal(version.stdout.trim(), '0.4.0');
+  assert.equal(packageMetadata.engines.node, '>=22.13.0');
 });

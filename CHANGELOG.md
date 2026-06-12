@@ -3,6 +3,14 @@
 This project follows Semantic Versioning for its public CLI, generated file contract,
 and programmatic API.
 
+## 0.4.0
+
+- Require Node.js 22.13.0 or newer as the runtime baseline.
+- Establish the built-in `node:sqlite` module as the baseline for planned
+  profile-aware local persistence, isolated behind a toolkit-owned adapter.
+- Avoid native third-party SQLite dependencies and their platform-specific install
+  lifecycle.
+
 ## 0.3.1
 
 - Keep `doctor` provider-neutral by detecting agent hosts rather than specific memory

@@ -6,7 +6,12 @@ system, hosting provider, repository name, or local filesystem layout.
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 22.13.0 or newer
+
+Node 22.13.0 is the minimum because it provides `node:sqlite` without requiring an
+experimental runtime flag. Planned profile persistence will remain behind a
+toolkit-owned adapter so the rest of the package does not depend directly on SQLite
+API details.
 
 ## Install
 
