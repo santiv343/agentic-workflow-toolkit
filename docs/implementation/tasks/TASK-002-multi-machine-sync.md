@@ -152,10 +152,33 @@ Excluded:
 - Decision: never allow an implicitly unlimited bundle or envelope policy.
   - Evidence: every transport must expose bounded storage, retry, and future cost
     behavior.
+- Decision: use UTF-8 NDJSON with one manifest line, streaming envelope lines, and a
+  final trailer.
+  - Evidence: the format remains portable and inspectable without requiring a
+    64 MiB in-memory parse.
+- Decision: include all technical metadata required for routing, causal merge,
+  policy enforcement, schema compatibility, size accounting, and accidental
+  corruption detection.
+  - Evidence: metadata minimization cannot make safe application impossible.
+- Decision: identify profile and project scopes with channel-scoped opaque sync IDs,
+  never human names, remotes, paths, hostnames, users, CLIs, models, or providers.
+  - Evidence: human identity does not participate in protocol convergence and would
+    add unnecessary disclosure.
+- Decision: include permitted plaintext payloads in envelopes and require an
+  explicit `--show-payloads` option to display them through inspect.
+  - Evidence: the selected transport is plaintext, but routine diagnostics should
+    avoid printing content accidentally.
+- Decision: keep project sync ID mappings local and quarantine envelopes for unknown
+  project scopes until explicit mapping or exclusion.
+  - Evidence: an unknown scope must never be guessed or applied to another project.
+- Decision: acknowledge unknown-scope envelopes only after the user accepts, excludes,
+  or maps the scope.
+  - Evidence: transport compaction must not discard data the receiver has not
+    deliberately handled.
 
 ## Open Questions
 
-- What metadata may the transport observe?
+- none
 
 ## Documentation Impact
 
@@ -183,6 +206,9 @@ Excluded:
 14. Bundle and envelope limits trigger lossless compaction or an actionable failure.
 15. Devices older than the causal frontier can rebase from a filtered logical
     snapshot without replacing local-only data.
+16. Bundles contain every required protocol field without exposing unnecessary local
+    identity metadata.
+17. Unknown project scopes remain quarantined until explicitly resolved.
 
 ## Test Map
 
@@ -203,6 +229,8 @@ Excluded:
 | AC13 | delete/policy/pin races | wall clock selects a winner | causal and restrictive rules converge |
 | AC14 | bundle pressure and failed compaction | pending events or original file disappear | original state survives or compacted bundle validates |
 | AC15 | long-offline device | full DB copy or permanent failure | logical snapshot rebase converges under policy |
+| AC16 | format and metadata validation | incomplete or local identity fields pass | required opaque fields pass and forbidden metadata is absent |
+| AC17 | unknown project scope | envelope attaches heuristically | inbox blocks until explicit mapping or exclusion |
 
 ## Plan
 
