@@ -166,7 +166,7 @@ separate decision, expands persistent state, or needs external credentials.
 - Review verified commit: e18b51ea25b88f04675f65dc085e5274912a0cd5
 - Findings: none
 - Residual risks: Unix tar branches were not executed on Windows; credential patterns are defensive rather than a specialized secret scanner; documentation assertions cover critical claims rather than every sentence.
-- Merge authorized by: pending
+- Merge authorized by: santi - explicit instruction on 2026-06-12 to complete steps 1-3
 - Merge status: pending
 - Merged commit: pending
 - Integrated verification command: pending
