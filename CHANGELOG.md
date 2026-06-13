@@ -16,6 +16,12 @@ and programmatic API.
   unverified claims and the next human gate.
 - Register a post-MVP behavioral evaluation suite for normal, ambiguous, adversarial,
   multilingual, and multi-agent scenarios.
+- Add packed-artifact end-to-end integration coverage for the complete public MVP
+  journey from an installed package in a clean repository.
+- Verify ambiguous initialization fails through the real CLI without partial writes.
+- Inspect extracted package payloads for private paths, credentials, and undeclared
+  Knowledge Hub data.
+- Assert public documentation matches observable behavior and honest hook limitations.
 
 ## 0.4.0
 
