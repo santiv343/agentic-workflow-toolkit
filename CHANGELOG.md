@@ -5,6 +5,16 @@ and programmatic API.
 
 ## Unreleased
 
+## 0.5.1 - 2026-06-13
+
+- Treat a baseline that cannot reach its intended behavioral oracle as
+  `blocked-invalid-baseline`.
+- Require agents to stop without changing implementation, tests, dependencies,
+  configuration, or scripts when the baseline is invalid and repair is not in scope.
+- Reject retroactive test-first claims based on focused tests added after an unrelated
+  failure.
+- Require the reported next action to address the observed baseline failure directly.
+
 ## 0.5.0 - 2026-06-12
 
 - Add an explicit task state machine from planning through integrated completion.

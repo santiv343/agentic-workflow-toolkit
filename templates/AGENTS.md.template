@@ -42,6 +42,19 @@ tool defaults.
   merged commit exists and verification passes on that exact integrated commit.
 - A command failing for the wrong reason is not evidence. Negative tests must assert
   the intended boundary, error, and absence of partial side effects.
+- For behavior changes and bug fixes, run the declared baseline before editing. If it
+  does not reach the expected behavioral oracle because of infrastructure,
+  dependency, configuration, compilation, permission, or harness failure, record
+  `Initial evidence result: blocked-invalid-baseline` and stop.
+- Do not edit product code, tests, dependencies, configuration, or scripts to
+  manufacture a valid red. Only repair the baseline when the approved Task Packet
+  explicitly scopes that repair.
+- A later focused test cannot retroactively satisfy the test-first gate after an
+  invalid baseline. Resume implementation only after the declared baseline reaches
+  the intended failure, or after the task is reclassified and approved with honest
+  evidence.
+- The reported next action must directly address the observed baseline failure. Do
+  not introduce unrelated tools, setup, or repository changes.
 - Characterization or hardening work may begin with passing tests when behavior
   already exists. Record that classification explicitly; never claim an artificial
   red phase.

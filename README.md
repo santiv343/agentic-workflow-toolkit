@@ -174,7 +174,11 @@ than stating that the task was checked in general. Each mapping uses
 Evidence semantics are explicit. Behavior changes and bug fixes require a pre-change
 failure or reproduction. Characterization, refactoring, and release hardening may
 start from a passing baseline, but must state the regression oracle they add. A
-command failing for an unrelated reason never counts as a red test.
+command failing for an unrelated reason never counts as a red test. If the declared
+baseline fails before reaching the expected behavioral oracle, the agent records
+`blocked-invalid-baseline` and stops without changing implementation, tests,
+dependencies, configuration, or scripts. Baseline repair must be explicitly scoped;
+an alternate test added afterward cannot retroactively establish test-first evidence.
 
 Every handoff has two layers. `Human Summary` explains the outcome, changes,
 verification, remaining work, and next gate in plain language. `Machine Evidence`

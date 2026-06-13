@@ -245,8 +245,26 @@ test('init creates the portable workflow contract with configured commands', asy
   assert.match(tasks, /# Task Packets/);
   assert.match(agents, /Workers may report evidence, but cannot approve their own work/);
   assert.match(agents, /Characterization or hardening work may begin with passing tests/);
+  assert.match(agents, /blocked-invalid-baseline/);
+  assert.match(
+    agents,
+    /Do not edit product code, tests, dependencies, configuration, or scripts to\s+manufacture a valid red/,
+  );
+  assert.match(
+    agents,
+    /A later focused test cannot retroactively satisfy the test-first gate/,
+  );
+  assert.match(
+    agents,
+    /The reported next action must directly address the observed baseline failure/,
+  );
   assert.match(tasks, /planned.*ready.*active.*review.*reviewed.*done/s);
   assert.match(tasks, /A command failing for the wrong reason is not evidence/);
+  assert.match(tasks, /blocked-invalid-baseline/);
+  assert.match(
+    tasks,
+    /Only repair the baseline when the approved Task Packet explicitly scopes that\s+repair/,
+  );
   assert.match(
     await readFile(
       path.join(
