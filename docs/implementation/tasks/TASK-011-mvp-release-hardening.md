@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- Status: active
+- Status: review
 - Base branch: `main`
 - Base commit: 4f5e38ed7e7386d64aa226641ec5936e2dd85e31
 - Worker branch: TASK-011-mvp-release-hardening
@@ -136,28 +136,28 @@ separate decision, expands persistent state, or needs external credentials.
 
 ### Human Summary
 
-- Response language: pending
-- Outcome summary: pending
-- Changes made: pending
-- Verification summary: pending
-- Unverified or inferred: pending
-- Remaining work: pending
-- Next gate: pending
+- Response language: es-AR
+- Outcome summary: El paquete instalado completa el recorrido MVP y los casos negativos ahora prueban la causa correcta.
+- Changes made: Se reforzaron las pruebas de instalación, ambigüedad, atomicidad, documentación y contenido real del tarball.
+- Verification summary: `npm run verify` pasó 56 tests y validó el paquete generado sobre el commit de handoff.
+- Unverified or inferred: none - todas las afirmaciones materiales están cubiertas por tests o inspección del diff.
+- Remaining work: Falta una revisión independiente del head exacto y luego la autorización humana de merge.
+- Next gate: independent-review
 
 ### Machine Evidence
 
-- Work classification: pending
-- Initial evidence command: pending
-- Initial evidence result: pending
-- Initial evidence: pending
-- Failure oracle: pending
-- Head commit: pending
-- Verification command: pending
-- Verification result: pending
-- Verified commit: pending
-- Acceptance criteria: pending
-- Scope command: pending
-- Scope result: pending
+- Work classification: hardening
+- Initial evidence command: `npm run verify` on 4f5e38ed7e7386d64aa226641ec5936e2dd85e31
+- Initial evidence result: passed-characterization
+- Initial evidence: El baseline del toolkit pasó 45 tests antes de incorporar la caracterización release-level.
+- Failure oracle: Las pruebas fallan si no se ejecuta el CLI real, si quedan escrituras parciales, si el payload contiene secretos o paths privados, o si la documentación contradice el comportamiento.
+- Head commit: e18b51ea25b88f04675f65dc085e5274912a0cd5
+- Verification command: `npm run verify`
+- Verification result: passed
+- Verified commit: e18b51ea25b88f04675f65dc085e5274912a0cd5
+- Acceptance criteria: AC1: npm pack instala el artefacto y expone el CLI; AC2: la fixture ejecuta init, check, context, grill, brief, learn y doctor; AC3: el CLI real rechaza ambigüedad y conflictos sin escrituras parciales; AC4: context prueba rutas sin contenido embebido; AC5: grill bloquea y acepta packets según contrato; AC6: brief prueba invariantes, contexto y learnings; AC7: el tarball extraído se inspecciona por paths, secretos y archivos no declarados; AC8: README y MVP se comparan con comportamiento y límites observables; AC9: npm run verify pasa sobre el head exacto.
+- Scope command: `git diff --name-only 4f5e38ed7e7386d64aa226641ec5936e2dd85e31...e18b51ea25b88f04675f65dc085e5274912a0cd5`
+- Scope result: passed
 - Review status: pending
 - Reviewer: pending
 - Reviewed commit: pending
@@ -175,10 +175,10 @@ separate decision, expands persistent state, or needs external credentials.
 
 ## Definition of Done
 
-- [ ] Acceptance criteria demonstrated.
-- [ ] Verification passed.
-- [ ] Diff stayed inside the write-set.
-- [ ] Decisions and assumptions are evidence-backed.
-- [ ] Open Questions is `none`.
-- [ ] Documentation impact was completed.
+- [x] Acceptance criteria demonstrated.
+- [x] Verification passed.
+- [x] Diff stayed inside the write-set.
+- [x] Decisions and assumptions are evidence-backed.
+- [x] Open Questions is `none`.
+- [x] Documentation impact was completed.
 - [ ] Independent review recorded the reviewed head commit.

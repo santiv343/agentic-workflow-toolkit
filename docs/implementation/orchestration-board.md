@@ -11,7 +11,7 @@ records transitions only after checking the required Task Packet evidence.
 
 | ID | Phase | Kind | Objective | Depends on | State | Owner | Branch | Worktree | Write-set | Base commit | Head commit |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| TASK-011 | MVP | slice | Harden and dogfood the existing portable CLI journey | none | active | codex-implementer | TASK-011-mvp-release-hardening | C:/Users/santi/AppData/Local/Temp/opencode/worktrees/TASK-011-mvp-release-hardening | tests, fixtures, package/docs fixes | 4f5e38ed7e7386d64aa226641ec5936e2dd85e31 | - |
+| TASK-011 | MVP | slice | Harden and dogfood the existing portable CLI journey | none | review | codex-implementer | TASK-011-mvp-release-hardening | C:/Users/santi/AppData/Local/Temp/opencode/worktrees/TASK-011-mvp-release-hardening | tests, fixtures, package/docs fixes | 4f5e38ed7e7386d64aa226641ec5936e2dd85e31 | e18b51ea25b88f04675f65dc085e5274912a0cd5 |
 | TASK-009 | Foundation | epic | Migrate to strict TypeScript and enforce target boundaries | TASK-011 | planned | unassigned | - | - | toolchain, source, tests, schemas, package | set at dispatch | - |
 | TASK-003 | Foundation | epic | Add normalized host events and conformance evidence | TASK-009 | planned | unassigned | - | - | event core, schemas, conformance | set at dispatch | - |
 | TASK-001 | Local runtime | epic | Add profiles, local persistence, memory policy, and safe binding | TASK-009 | planned | unassigned | - | - | profile, storage, CLI, tests, docs | set at dispatch | - |
