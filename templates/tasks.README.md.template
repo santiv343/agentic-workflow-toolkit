@@ -56,6 +56,18 @@ move the task to `planned`. `done` is terminal.
 - A command failing for the wrong reason is not evidence.
 - Negative tests assert the intended error and side effects. Any unrelated process
   failure is insufficient.
+- For behavior changes and bug fixes, the declared initial evidence command must
+  reach the expected behavioral oracle before implementation begins. Infrastructure,
+  dependency, configuration, compilation, permission, and harness failures are
+  recorded as `Initial evidence result: blocked-invalid-baseline`.
+- `blocked-invalid-baseline` is a stop condition, not permission to create an
+  alternate focused test, modify the harness, or proceed with implementation. A
+  later test cannot retroactively satisfy the test-first gate.
+- Only repair the baseline when the approved Task Packet explicitly scopes that
+  repair. Otherwise report the observed failure and the smallest next action needed
+  to make the declared baseline executable.
+- That next action must directly address the observed failure; do not introduce
+  unrelated tools, setup, or repository changes.
 - Every acceptance criterion maps by ID (`AC1`, `AC2`, ...) to a concrete test,
   inspection, or artifact using `AC1: evidence; AC2: evidence`. Bare IDs or words
   such as `passed`, `done`, or `checked` are invalid evidence.

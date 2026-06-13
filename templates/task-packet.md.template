@@ -89,13 +89,17 @@ If no documentation changes:
 2. For behavior changes or bug fixes, prove the intended failure. For
    characterization, hardening, documentation, or research, record the applicable
    passing baseline or deterministic review procedure.
-3. Add the minimum scoped implementation or artifact change.
-4. Run `{{VERIFY_COMMAND}}` on the exact handoff head.
+3. If the declared baseline cannot reach the intended behavioral oracle, record
+   `blocked-invalid-baseline` and stop without changing implementation, tests,
+   dependencies, configuration, or scripts unless baseline repair is explicitly in
+   scope.
+4. Add the minimum scoped implementation or artifact change.
+5. Run `{{VERIFY_COMMAND}}` on the exact handoff head.
 
 ## Stop Conditions
 
-Stop if scope must expand, ownership overlaps, dependencies are stale, or a gate
-must be weakened.
+Stop if scope must expand, ownership overlaps, dependencies are stale, the declared
+baseline fails before reaching its behavioral oracle, or a gate must be weakened.
 
 ## Handoff Evidence
 
