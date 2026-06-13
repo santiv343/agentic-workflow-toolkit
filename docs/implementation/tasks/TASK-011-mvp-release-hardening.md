@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- Status: review
+- Status: reviewed
 - Base branch: `main`
 - Base commit: 4f5e38ed7e7386d64aa226641ec5936e2dd85e31
 - Worker branch: TASK-011-mvp-release-hardening
@@ -141,8 +141,8 @@ separate decision, expands persistent state, or needs external credentials.
 - Changes made: Se reforzaron las pruebas de instalación, ambigüedad, atomicidad, documentación y contenido real del tarball.
 - Verification summary: `npm run verify` pasó 56 tests y validó el paquete generado sobre el commit de handoff.
 - Unverified or inferred: none - todas las afirmaciones materiales están cubiertas por tests o inspección del diff.
-- Remaining work: Falta una revisión independiente del head exacto y luego la autorización humana de merge.
-- Next gate: independent-review
+- Remaining work: Falta integrar el head revisado en `main` y verificar el commit integrado.
+- Next gate: human-merge
 
 ### Machine Evidence
 
@@ -158,14 +158,14 @@ separate decision, expands persistent state, or needs external credentials.
 - Acceptance criteria: AC1: npm pack instala el artefacto y expone el CLI; AC2: la fixture ejecuta init, check, context, grill, brief, learn y doctor; AC3: el CLI real rechaza ambigüedad y conflictos sin escrituras parciales; AC4: context prueba rutas sin contenido embebido; AC5: grill bloquea y acepta packets según contrato; AC6: brief prueba invariantes, contexto y learnings; AC7: el tarball extraído se inspecciona por paths, secretos y archivos no declarados; AC8: README y MVP se comparan con comportamiento y límites observables; AC9: npm run verify pasa sobre el head exacto.
 - Scope command: `git diff --name-only 4f5e38ed7e7386d64aa226641ec5936e2dd85e31...e18b51ea25b88f04675f65dc085e5274912a0cd5`
 - Scope result: passed
-- Review status: pending
-- Reviewer: pending
-- Reviewed commit: pending
-- Review verification command: pending
-- Review verification result: pending
-- Review verified commit: pending
-- Findings: pending
-- Residual risks: pending
+- Review status: approved
+- Reviewer: Pasteur (independent read-only reviewer)
+- Reviewed commit: e18b51ea25b88f04675f65dc085e5274912a0cd5
+- Review verification command: `npm run verify`
+- Review verification result: passed
+- Review verified commit: e18b51ea25b88f04675f65dc085e5274912a0cd5
+- Findings: none
+- Residual risks: Unix tar branches were not executed on Windows; credential patterns are defensive rather than a specialized secret scanner; documentation assertions cover critical claims rather than every sentence.
 - Merge authorized by: pending
 - Merge status: pending
 - Merged commit: pending
@@ -181,4 +181,4 @@ separate decision, expands persistent state, or needs external credentials.
 - [x] Decisions and assumptions are evidence-backed.
 - [x] Open Questions is `none`.
 - [x] Documentation impact was completed.
-- [ ] Independent review recorded the reviewed head commit.
+- [x] Independent review recorded the reviewed head commit.
