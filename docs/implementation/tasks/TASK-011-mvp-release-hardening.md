@@ -2,7 +2,7 @@
 
 ## Metadata
 
-- Status: reviewed
+- Status: done
 - Base branch: `main`
 - Base commit: 4f5e38ed7e7386d64aa226641ec5936e2dd85e31
 - Worker branch: TASK-011-mvp-release-hardening
@@ -141,8 +141,8 @@ separate decision, expands persistent state, or needs external credentials.
 - Changes made: Se reforzaron las pruebas de instalación, ambigüedad, atomicidad, documentación y contenido real del tarball.
 - Verification summary: `npm run verify` pasó 56 tests y validó el paquete generado sobre el commit de handoff.
 - Unverified or inferred: none - todas las afirmaciones materiales están cubiertas por tests o inspección del diff.
-- Remaining work: Falta integrar el head revisado en `main` y verificar el commit integrado.
-- Next gate: human-merge
+- Remaining work: none - el head revisado fue integrado y el commit de merge fue verificado.
+- Next gate: none
 
 ### Machine Evidence
 
@@ -167,11 +167,11 @@ separate decision, expands persistent state, or needs external credentials.
 - Findings: none
 - Residual risks: Unix tar branches were not executed on Windows; credential patterns are defensive rather than a specialized secret scanner; documentation assertions cover critical claims rather than every sentence.
 - Merge authorized by: santi - explicit instruction on 2026-06-12 to complete steps 1-3
-- Merge status: pending
-- Merged commit: pending
-- Integrated verification command: pending
-- Integrated verification result: pending
-- Integrated verified commit: pending
+- Merge status: merged
+- Merged commit: 928edfb4ac4187d933900103d1f69f5ce5c32a10
+- Integrated verification command: `npm run verify`
+- Integrated verification result: passed
+- Integrated verified commit: 928edfb4ac4187d933900103d1f69f5ce5c32a10
 
 ## Definition of Done
 
@@ -182,3 +182,4 @@ separate decision, expands persistent state, or needs external credentials.
 - [x] Open Questions is `none`.
 - [x] Documentation impact was completed.
 - [x] Independent review recorded the reviewed head commit.
+- [x] Human-authorized integration was verified on the exact merge commit.
