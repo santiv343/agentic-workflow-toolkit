@@ -1,6 +1,6 @@
 {
   "name": "agentic-workflow-toolkit",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Portable project control-plane scaffolding and validation CLI",
   "type": "module",
   "main": "./src/index.js",

@@ -1603,6 +1603,6 @@ test('CLI exposes help and package version', async () => {
   assert.match(help.stdout, /agentic-workflow grill/);
   assert.match(help.stdout, /agentic-workflow learn/);
   assert.match(help.stdout, /agentic-workflow brief/);
-  assert.equal(version.stdout.trim(), '0.4.0');
+  assert.equal(version.stdout.trim(), packageMetadata.version);
   assert.equal(packageMetadata.engines.node, '>=22.13.0');
 });

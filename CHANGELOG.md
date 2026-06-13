@@ -5,6 +5,8 @@ and programmatic API.
 
 ## Unreleased
 
+## 0.5.0 - 2026-06-12
+
 - Add an explicit task state machine from planning through integrated completion.
 - Require exact-SHA dispatch, execution, review, merge, and verification evidence for
   executable task states.
